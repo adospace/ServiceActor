@@ -262,7 +262,7 @@ namespace ServiceActor.Tests
         {
             public void Increment<T>(T counter) where T : ICounter
             {
-                
+
             }
         }
 
@@ -270,7 +270,59 @@ namespace ServiceActor.Tests
         public void ShouldCreateRefToServiceWithTemplateConstraintWithoutException()
         {
             Assert.IsNotNull(ServiceRef.Create<IInterfaceWithIncrement>(new TypeWithIncrement()));
-            
+        }
+
+        [ServiceDomain(Domain.MyCustomDomain)]
+        public interface IServiceA
+        {
+            void UseServiceB();
+        }
+
+        [ServiceDomain(Domain.MyCustomDomain)]
+        public interface IServiceB
+        {
+            bool ServiceUsed { get; }
+            void UseService();
+        }
+
+        private enum Domain
+        {
+            MyCustomDomain
+        }
+
+        private class ServiceA : IServiceA
+        {
+            private readonly IServiceB _serviceB;
+
+            public ServiceA(IServiceB serviceB)
+            {
+                _serviceB = serviceB;
+            }
+
+            public void UseServiceB()
+            {
+                _serviceB.UseService();
+            }
+        }
+
+        private class ServiceB : IServiceB
+        {
+            public bool ServiceUsed { get; private set; }
+
+            public void UseService()
+            {
+                ServiceUsed = true;
+            }
+        }
+
+        [TestMethod]
+        public void ShouldCreateRefWithSingleDomain()
+        {
+            var serviceB = ServiceRef.Create<IServiceB>(new ServiceB());
+            var serviceA = ServiceRef.Create<IServiceA>(new ServiceA(serviceB));
+
+            serviceA.UseServiceB();
+            Assert.IsTrue(serviceB.ServiceUsed);
         }
     }
 }

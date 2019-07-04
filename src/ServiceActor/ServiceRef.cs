@@ -38,7 +38,7 @@ namespace ServiceActor
                     Assembly.GetExecutingAssembly(),
                     typeof(T).Assembly,
                     typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-                globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = GetActionQueueFor(objectToWrap) }
+                globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = GetActionQueueFor(typeof(T)) }
                 ).Result;
 
             _wrappersCache.TryAdd(objectToWrap, wrapper);
@@ -48,9 +48,9 @@ namespace ServiceActor
             return (T)wrapper;
         }
 
-        private static ActionQueue GetActionQueueFor(object objectToWrap)
+        private static ActionQueue GetActionQueueFor(Type typeToWrap)
         {
-            if (Attribute.GetCustomAttribute(objectToWrap.GetType(), typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
+            if (Attribute.GetCustomAttribute(typeToWrap, typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
             {
                 return _queuesCache.AddOrUpdate(serviceDomain.DomainKey, new ActionQueue(), (key, oldValue) => oldValue);
             }
