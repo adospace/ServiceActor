@@ -90,6 +90,8 @@ namespace ServiceActor.Tests
             void TestMethod<T1, T2>(T1 i, IDictionary<string, Action<T1>> dict);
 
             Task<T3> TestMethod<T1, T2, T3>(T1 i, IDictionary<string, Action<T1>> dict, out T3 t3);
+
+            void TestMethod<T1, T2>(T1 clonable) where T1: ICloneable, IAsyncResult where T2: IComparable;
         }
 
         [TestMethod]
@@ -138,6 +140,12 @@ namespace ServiceActor.Tests
         public void ShouldGenerateInvocationCodeForComplexGenericMethodWithParameters()
         {
             Assert.AreEqual("TestMethod<T1, T2, T3>(i, dict, t3)", typeof(ITestItfWithMethods).GetMethods()[3].GetMethodInvocationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateDeclarationCodeForGenericMethodWithParametersConstraint()
+        {
+            Assert.AreEqual("void TestMethod<T1, T2>(T1 clonable) where T1: System.ICloneable, System.IAsyncResult where T2: System.IComparable", typeof(ITestItfWithMethods).GetMethods()[4].GetMethodDeclarationCode());
         }
     }
 }

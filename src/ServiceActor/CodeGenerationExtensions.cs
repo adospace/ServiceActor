@@ -37,7 +37,12 @@ namespace ServiceActor
             if (!methodInfo.IsGenericMethod)
                 return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
 
-            return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_ => _.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
+            return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_ => _.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))}) {GetGenericParameterConstraintsDeclarationCode(methodInfo)}";
+        }
+
+        private static string GetGenericParameterConstraintsDeclarationCode(MethodInfo methodInfo)
+        {
+            return string.Join(" ", methodInfo.GetGenericArguments().Select(_ => "where " + _.Name + ": " + string.Join(", ", _.GetGenericParameterConstraints().Select(c => c.GetTypeReferenceCode()))));
         }
 
         public static string GetMethodInvocationCode(this MethodInfo methodInfo)
@@ -97,5 +102,7 @@ namespace ServiceActor
 
             throw new NotSupportedException();
         }
+
+
     }
 }

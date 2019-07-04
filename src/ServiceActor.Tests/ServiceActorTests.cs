@@ -252,5 +252,25 @@ namespace ServiceActor.Tests
             Assert.IsNotNull(ServiceRef.Create<IAdvancedCounter>(new AdvancedCounter()));
             Assert.IsNotNull(ServiceRef.Create<IDecrementerCounter>(new AdvancedCounterWithDecrementer()));
         }
+
+        public interface IInterfaceWithIncrement
+        {
+            void Increment<T>(T counter) where T : ICounter;
+        }
+
+        public class TypeWithIncrement : IInterfaceWithIncrement
+        {
+            public void Increment<T>(T counter) where T : ICounter
+            {
+                
+            }
+        }
+
+        [TestMethod]
+        public void ShouldCreateRefToServiceWithTemplateConstraintWithoutException()
+        {
+            Assert.IsNotNull(ServiceRef.Create<IInterfaceWithIncrement>(new TypeWithIncrement()));
+            
+        }
     }
 }
