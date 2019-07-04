@@ -80,5 +80,66 @@ namespace ServiceActor.Tests
         {
             Assert.AreEqual("out T2", typeof(IMyIntType<string, string>).GetMethods()[2].GetParameters()[1].GetTypeReferenceCode());
         }
+
+        private interface ITestItfWithMethods
+        {
+            void TestMethod();
+
+            void TestMethod(int i, Action action);
+
+            void TestMethod<T1, T2>(T1 i, IDictionary<string, Action<T1>> dict);
+
+            Task<T3> TestMethod<T1, T2, T3>(T1 i, IDictionary<string, Action<T1>> dict, out T3 t3);
+
+        }
+
+        [TestMethod]
+        public void ShouldGenerateDeclarationCodeForSimpleMethod()
+        {
+            Assert.AreEqual("void TestMethod()", typeof(ITestItfWithMethods).GetMethods()[0].GetMethodDeclarationCode());
+        }
+
+
+        [TestMethod]
+        public void ShouldGenerateInvocationCodeForSimpleMethod()
+        {
+            Assert.AreEqual("TestMethod()", typeof(ITestItfWithMethods).GetMethods()[0].GetMethodInvocationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateDeclarationCodeForSimpleMethodWithParameters()
+        {
+            Assert.AreEqual("void TestMethod(System.Int32 i, System.Action action)", typeof(ITestItfWithMethods).GetMethods()[1].GetMethodDeclarationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateInvocationCodeForSimpleMethodWithParameters()
+        {
+            Assert.AreEqual("TestMethod(i, action)", typeof(ITestItfWithMethods).GetMethods()[1].GetMethodInvocationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateDeclarationCodeForGenericMethodWithParameters()
+        {
+            Assert.AreEqual("void TestMethod<T1, T2>(T1 i, System.Collections.Generic.IDictionary<System.String, System.Action<T1>> dict)", typeof(ITestItfWithMethods).GetMethods()[2].GetMethodDeclarationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateInvocationCodeForGenericMethodWithParameters()
+        {
+            Assert.AreEqual("TestMethod<T1, T2>(i, dict)", typeof(ITestItfWithMethods).GetMethods()[2].GetMethodInvocationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateDeclarationCodeForComplexGenericMethodWithParameters()
+        {
+            Assert.AreEqual("System.Threading.Tasks.Task<T3> TestMethod<T1, T2, T3>(T1 i, System.Collections.Generic.IDictionary<System.String, System.Action<T1>> dict, out T3 t3)", typeof(ITestItfWithMethods).GetMethods()[3].GetMethodDeclarationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateInvocationCodeForComplexGenericMethodWithParameters()
+        {
+            Assert.AreEqual("TestMethod<T1, T2, T3>(i, dict, t3)", typeof(ITestItfWithMethods).GetMethods()[3].GetMethodInvocationCode());
+        }
     }
 }

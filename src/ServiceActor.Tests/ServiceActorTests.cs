@@ -148,5 +148,27 @@ namespace ServiceActor.Tests
 
             Assert.IsNotNull(serviceRef);
         }
+
+        public interface ITestServiceWithEvents
+        {
+            event EventHandler Event;
+        }
+
+        public class TestServiceWithEvents : ITestServiceWithEvents
+        {
+            public event EventHandler Event;
+        }
+
+        [TestMethod]
+        public void ShouldCreateRefThrowExceptionWhenWrapTypesWithEvents()
+        {
+            Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.Create<ITestServiceWithEvents>(new TestServiceWithEvents()));
+        }
+
+        [TestMethod]
+        public void ShouldCreateRefThrowExceptionWhenWrapTypesThatNotAreInterfaces()
+        {
+            Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.Create(new TestServiceWithEvents()));
+        }
     }
 }

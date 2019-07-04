@@ -30,6 +30,32 @@ namespace ServiceActor
             return GenerateReferenceCodeForTypeString(parameterInfo.ParameterType.ToString().Replace('+', '.'), parameterInfo.IsOut);
         }
 
+        public static string GetMethodDeclarationCode(this MethodInfo methodInfo)
+        {
+            if (methodInfo == null)
+            {
+                throw new ArgumentNullException(nameof(methodInfo));
+            }
+
+            if (!methodInfo.IsGenericMethod)
+                return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
+
+            return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_=>_.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
+        }
+
+        public static string GetMethodInvocationCode(this MethodInfo methodInfo)
+        {
+            if (methodInfo == null)
+            {
+                throw new ArgumentNullException(nameof(methodInfo));
+            }
+
+            if (!methodInfo.IsGenericMethod)
+                return $"{methodInfo.Name}({string.Join(", ", methodInfo.GetParameters().Select(_ => _.Name))})";
+
+            return $"{methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_ => _.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.Name))})";
+        }
+
         private static string GenerateReferenceCodeForTypeString(string typeString, bool isOut = false)
         {
             var generatedCodeTokens = typeString.Split('`');
@@ -39,7 +65,7 @@ namespace ServiceActor
                 if (generatedCodeTokens[0].EndsWith("&"))
                     return (isOut ? "out " : "ref ") + generatedCodeTokens[0].TrimEnd('&');
 
-                return generatedCodeTokens[0];
+                return generatedCodeTokens[0] == "System.Void" ? "void" : generatedCodeTokens[0];
             }
 
             var generatedCodeGenricTagStartIndex = typeString.IndexOf('[');
@@ -55,17 +81,6 @@ namespace ServiceActor
             throw new NotSupportedException();
         }
 
-        //private static string GenerateReferenceCodeForType(Type type)
-        //{
-        //    var codeTypeReference = new CodeTypeReference(type);
-        //    var provider = new CSharpCodeProvider();
-        //    var codeGenerated = provider.GetTypeOutput(codeTypeReference);
-
-        //    var generatedCodeGenricTagIndex = codeGenerated.IndexOf('<');
-        //    if (generatedCodeGenricTagIndex > -1)
-        //        return codeGenerated.Substring(0, generatedCodeGenricTagIndex);
-
-        //    return codeGenerated;
-        //}
+        
     }
 }

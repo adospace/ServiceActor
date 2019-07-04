@@ -4,6 +4,7 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Threading.Tasks" #>
+<#@ import namespace="ServiceActor" #>
 using System;
 using System.Linq;
 using System.Threading;
@@ -21,12 +22,12 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
     }
 
     <# foreach (var property in TypeToWrap.GetProperties()) { #>
-    public <#= CSharpTypeName(property.PropertyType) #> <#= property.Name #>
+    public <#= property.PropertyType.GetTypeReferenceCode() #> <#= property.Name #>
     {
         <# if (property.CanRead) { #>
         get
         {
-            <#= CSharpTypeName(property.PropertyType) #> res = default;
+            <#= property.PropertyType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             _actionQueue.Enqueue(() =>
             {
@@ -53,47 +54,47 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
         
     
         <# if (method.ReturnType == typeof(void)) { #>
-        public void <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
+        public <#= method.GetMethodDeclarationCode() #>
         {
             _actionQueue.Enqueue(() =>
             {
-                _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
+                _objectToWrap.<#= method.GetMethodInvocationCode() #>;
             });
         }
-        <# } else if (IsTaskWithArgumentType(method.ReturnType)) { #>
-        public async <#= CSharpTypeName(method.ReturnType) #> <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
+        <# } else if (method.ReturnType == typeof(Task)) { #>
+        public <#= method.GetMethodDeclarationCode() #>
         {
-            <#= GetTaskArgument(method.ReturnType) #> res = default;
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             _actionQueue.Enqueue(async () =>
             {
-                res = await _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
+                await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                executedEvent.Set();
+            });
+
+            return executedEvent.WaitAsync();
+        }
+        <# } else if (method.ReturnType.BaseType == typeof(Task)) { #>
+        public async <#= method.GetMethodDeclarationCode() #>
+        {
+            <#= method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
+            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
+            _actionQueue.Enqueue(async () =>
+            {
+                res = await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
                 executedEvent.Set();
             });
 
             await executedEvent.WaitAsync();
             return res;
         }
-        <# } else if (method.ReturnType == typeof(Task)) { #>
-        public Task <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
-        {
-            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
-            _actionQueue.Enqueue(async () =>
-            {
-                await _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
-                executedEvent.Set();
-            });
-
-            return executedEvent.WaitAsync();
-        }
         <# } else { #>
-        public <#= CSharpTypeName(method.ReturnType) #> <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
+        public <#= method.GetMethodDeclarationCode() #>
         {
-            <#= CSharpTypeName(method.ReturnType) #> res = default;
+            <#= method.ReturnType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             _actionQueue.Enqueue(() =>
             {
-                res = _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
+                res = _objectToWrap.<#= method.GetMethodInvocationCode() #>;
                 executedEvent.Set();
             });
             executedEvent.WaitOne();

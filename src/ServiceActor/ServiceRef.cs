@@ -7,7 +7,7 @@ namespace ServiceActor
 {
     public static class ServiceRef
     {
-        private class Globals
+        public class Globals
         {
             public object ObjectToWrap { get; set; }
 
