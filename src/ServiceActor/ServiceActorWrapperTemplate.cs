@@ -76,7 +76,7 @@ namespace ServiceActor
     ");
             
             #line 24 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- foreach (var property in TypeToWrap.GetProperties()) { 
+ foreach (var property in GetProperties()) { 
             
             #line default
             #line hidden

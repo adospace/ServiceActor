@@ -30,9 +30,14 @@ namespace ServiceActor
 
         private bool _blockCallerByDefault = false;
 
+        private const BindingFlags _flags = BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
+
         private IEnumerable<MethodInfo> GetMethods() => TypeToWrap
-            .GetMethods()
+            .GetFlattenMethods()
             .Where(_ => !_.Name.StartsWith("get_") && !_.Name.StartsWith("set_") && !_.Name.StartsWith("add_") && !_.Name.StartsWith("remove_"));
+
+        private IEnumerable<PropertyInfo> GetProperties() => TypeToWrap
+            .GetFlattenProperties();
 
         private bool PropertyGetAllowsConcurrentAccess(PropertyInfo propertyInfo)
         {

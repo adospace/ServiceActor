@@ -190,7 +190,7 @@ namespace ServiceActor.Tests
 
         private class Counter : ICounter
         {
-            public int Count { get; private set; }
+            public int Count { get; protected set; }
 
             public void Increment()
             {
@@ -214,6 +214,43 @@ namespace ServiceActor.Tests
                 .ToArray());
 
             Assert.AreEqual(10, counter.Count);
+        }
+
+        public interface IAdvancedCounter : ICounter
+        {
+            void Increment(int countToAdd);
+        }
+
+        public interface IDecrementerCounter : IAdvancedCounter
+        {
+            void Decrementer();
+        }
+
+        private class AdvancedCounter : Counter, IAdvancedCounter
+        {
+            public void Increment(int countToAdd)
+            {
+                Count += 10;
+            }
+        }
+        private class AdvancedCounterWithDecrementer : Counter, IAdvancedCounter, IDecrementerCounter
+        {
+            public void Decrementer()
+            {
+                Count -= 1;
+            }
+
+            public void Increment(int countToAdd)
+            {
+                Count += 10;
+            }
+        }
+
+        [TestMethod]
+        public void ShouldCreateRefToServiceWithBaseInterfacesWithoutException()
+        {
+            Assert.IsNotNull(ServiceRef.Create<IAdvancedCounter>(new AdvancedCounter()));
+            Assert.IsNotNull(ServiceRef.Create<IDecrementerCounter>(new AdvancedCounterWithDecrementer()));
         }
     }
 }

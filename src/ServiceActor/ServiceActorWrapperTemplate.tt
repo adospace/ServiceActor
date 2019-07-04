@@ -21,7 +21,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
         _actionQueue = actionQueue ?? throw new ArgumentNullException(nameof(actionQueue));
     }
 
-    <# foreach (var property in TypeToWrap.GetProperties()) { #>
+    <# foreach (var property in GetProperties()) { #>
     public <#= property.PropertyType.GetTypeReferenceCode() #> <#= property.Name #>
     {
         <# if (property.CanRead) { #>
