@@ -170,5 +170,15 @@ namespace ServiceActor.Tests
         {
             Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.Create(new TestServiceWithEvents()));
         }
+
+        [TestMethod]
+        public void ShouldCreateRefReuseAlreadyCreatedWrapper()
+        {
+            var testService = new TestService();
+            var serviceRef1 = ServiceRef.Create<ITestService>(testService);
+            var serviceRef2 = ServiceRef.Create<ITestService>(testService);
+
+            Assert.AreSame(serviceRef1, serviceRef2);
+        }
     }
 }
