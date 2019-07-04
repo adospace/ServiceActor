@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceActor.Tests
@@ -178,6 +179,41 @@ namespace ServiceActor.Tests
             var serviceRef2 = ServiceRef.Create<ITestService>(testService);
 
             Assert.AreSame(serviceRef1, serviceRef2);
+        }
+
+        public interface ICounter
+        {
+            int Count { get; }
+
+            void Increment();
+        }
+
+        private class Counter : ICounter
+        {
+            public int Count { get; private set; }
+
+            public void Increment()
+            {
+                Count += 1;
+            }
+        }
+
+        [TestMethod]
+        public void ConcurrentAccessToServiceActorShouldJustWork()
+        {
+            var counter = ServiceRef.Create<ICounter>(new Counter());
+
+            Task.WaitAll(
+                Enumerable
+                .Range(0, 10)
+                .Select(_ =>
+                    Task.Factory.StartNew(() =>
+                    {
+                        counter.Increment();
+                    }))
+                .ToArray());
+
+            Assert.AreEqual(10, counter.Count);
         }
     }
 }
