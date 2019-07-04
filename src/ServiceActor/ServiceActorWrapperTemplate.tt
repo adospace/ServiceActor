@@ -1,0 +1,108 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Threading.Tasks" #>
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
+{
+    private readonly <#= TypeToWrapFullName #> _objectToWrap;
+    private readonly ServiceActor.ActionQueue _actionQueue;
+
+    public <#= TypeToWrap.Name #>AsyncActorWrapper(<#= TypeToWrapFullName #> objectToWrap, ServiceActor.ActionQueue actionQueue)
+    {
+        _objectToWrap = objectToWrap ?? throw new ArgumentNullException(nameof(objectToWrap));
+        _actionQueue = actionQueue ?? throw new ArgumentNullException(nameof(actionQueue));
+    }
+
+    <# foreach (var property in TypeToWrap.GetProperties()) { #>
+    public <#= CSharpTypeName(property.PropertyType) #> <#= property.Name #>
+    {
+        <# if (property.CanRead) { #>
+        get
+        {
+            <#= CSharpTypeName(property.PropertyType) #> res = default;
+            var executedEvent = new AutoResetEvent(false);
+            _actionQueue.Enqueue(() =>
+            {
+                res = _objectToWrap.<#= property.Name #>;
+                executedEvent.Set();
+            });
+            executedEvent.WaitOne();
+            return res;
+        }
+        <# } #>
+        <# if (property.CanWrite) { #>
+        set
+        {
+            _actionQueue.Enqueue(() =>
+            {
+                _objectToWrap.<#= property.Name #> = value;
+            });
+        }
+        <# } #>
+    }
+	<# } #>
+
+    <# foreach (var method in GetMethods()) { #>
+        
+    
+        <# if (method.ReturnType == typeof(void)) { #>
+        public void <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
+        {
+            _actionQueue.Enqueue(() =>
+            {
+                _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
+            });
+        }
+        <# } else if (IsTaskWithArgumentType(method.ReturnType)) { #>
+        public async <#= CSharpTypeName(method.ReturnType) #> <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
+        {
+            <#= GetTaskArgument(method.ReturnType) #> res = default;
+            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
+            _actionQueue.Enqueue(async () =>
+            {
+                res = await _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
+                executedEvent.Set();
+            });
+
+            await executedEvent.WaitAsync();
+            return res;
+        }
+        <# } else if (method.ReturnType == typeof(Task)) { #>
+        public Task <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
+        {
+            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
+            _actionQueue.Enqueue(async () =>
+            {
+                await _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
+                executedEvent.Set();
+            });
+
+            return executedEvent.WaitAsync();
+        }
+        <# } else { #>
+        public <#= CSharpTypeName(method.ReturnType) #> <#= GetMethodName(method) #>(<#= GetParametersString(method) #>)
+        {
+            <#= CSharpTypeName(method.ReturnType) #> res = default;
+            var executedEvent = new AutoResetEvent(false);
+            _actionQueue.Enqueue(() =>
+            {
+                res = _objectToWrap.<#= GetMethodName(method) #>(<#= GetParametersString(method, true) #>);
+                executedEvent.Set();
+            });
+            executedEvent.WaitOne();
+            return res;
+        }
+        <# } #>
+
+    <# } #>
+    
+}
+
+return new <#= TypeToWrap.Name #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, ActionQueueToShare);

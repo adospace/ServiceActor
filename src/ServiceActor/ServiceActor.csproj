@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version Condition=" '$(APPVEYOR_BUILD_VERSION)' == '' ">0.0.1-local</Version>
+    <Version Condition=" '$(APPVEYOR_BUILD_VERSION)' != '' ">$(APPVEYOR_BUILD_VERSION)-beta</Version>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Version>0.0.1-local</Version>
+    <Authors>adospace</Authors>
+    <Description>ServiceActor implements an Actor Model like model in .NET. ServiceActor goal is to allow multithreding code access to class services concurrently and lock-free.</Description>
+    <Copyright>Adolfo Marinucci</Copyright>
+    <PackageTags>service actor lock free concurrent multithreading access</PackageTags>
+    <PackageProjectUrl>https://github.com/adospace/ServiceActor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/adospace/ServiceActor</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.1.0" />
+    <PackageReference Include="Nito.AsyncEx" Version="5.0.0" />
+    <PackageReference Include="System.CodeDom" Version="4.5.0" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ServiceActorWrapperTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>ServiceActorWrapperTemplate.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="ServiceActorWrapperTemplate.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ServiceActorWrapperTemplate.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>
