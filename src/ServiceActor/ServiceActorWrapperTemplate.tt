@@ -27,6 +27,12 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
         <# if (property.CanRead) { #>
         get
         {
+            <# if (PropertyGetAllowsConcurrentAccess(property)) { #>
+
+            return _objectToWrap.<#= property.Name #>;
+
+            <# } else { #>
+
             <#= property.PropertyType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             _actionQueue.Enqueue(() =>
@@ -36,34 +42,85 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             });
             executedEvent.WaitOne();
             return res;
+
+            <# } #>
         }
         <# } #>
         <# if (property.CanWrite) { #>
         set
         {
-            _actionQueue.Enqueue(() =>
-            {
-                _objectToWrap.<#= property.Name #> = value;
-            });
+            <# if (PropertySetAllowsConcurrentAccess(property)) { #>
+
+            _objectToWrap.<#= property.Name #> = value;
+
+            <# } else { #>
+
+                <# if (BlockCaller(property)) { #>
+
+                var executedEvent = new AutoResetEvent(false);
+                _actionQueue.Enqueue(() =>
+                {
+                    _objectToWrap.<#= property.Name #> = value;
+                    executedEvent.Set();
+                });
+                executedEvent.WaitOne();
+
+                <# } else { #>
+
+                _actionQueue.Enqueue(() =>
+                {
+                    _objectToWrap.<#= property.Name #> = value;
+                });
+
+                <# } #>
+
+            <# } #>
         }
         <# } #>
     }
 	<# } #>
 
     <# foreach (var method in GetMethods()) { #>
-        
     
         <# if (method.ReturnType == typeof(void)) { #>
         public <#= method.GetMethodDeclarationCode() #>
         {
-            _actionQueue.Enqueue(() =>
-            {
-                _objectToWrap.<#= method.GetMethodInvocationCode() #>;
-            });
+            <# if (MethodAllowsConcurrentAccess(method)) { #>
+
+            _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+
+            <# } else { #>
+
+                <# if (BlockCaller(method)) { #>
+
+                var executedEvent = new AutoResetEvent(false);
+                _actionQueue.Enqueue(() =>
+                {
+                    _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    executedEvent.Set();
+                });
+                executedEvent.WaitOne();
+
+                <# } else { #>
+
+                _actionQueue.Enqueue(() =>
+                {
+                    _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                });
+
+                <# } #>
+
+            <# } #>
         }
         <# } else if (method.ReturnType == typeof(Task)) { #>
         public <#= method.GetMethodDeclarationCode() #>
         {
+            <# if (MethodAllowsConcurrentAccess(method)) { #>
+
+            return _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+
+            <# } else { #>
+
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             _actionQueue.Enqueue(async () =>
             {
@@ -72,10 +129,19 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             });
 
             return executedEvent.WaitAsync();
+
+            <# } #>
+
         }
         <# } else if (method.ReturnType.BaseType == typeof(Task)) { #>
         public async <#= method.GetMethodDeclarationCode() #>
         {
+            <# if (MethodAllowsConcurrentAccess(method)) { #>
+
+            return await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+
+            <# } else { #>
+
             <#= method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             _actionQueue.Enqueue(async () =>
@@ -86,10 +152,19 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
             await executedEvent.WaitAsync();
             return res;
+
+            <# } #>
+
         }
         <# } else { #>
         public <#= method.GetMethodDeclarationCode() #>
         {
+            <# if (MethodAllowsConcurrentAccess(method)) { #>
+
+            return _objectToWrap.<#= method.GetMethodInvocationCode() #>
+
+            <# } else { #>
+
             <#= method.ReturnType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             _actionQueue.Enqueue(() =>
@@ -99,6 +174,9 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             });
             executedEvent.WaitOne();
             return res;
+
+            <# } #>
+
         }
         <# } #>
 

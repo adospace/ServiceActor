@@ -1,19 +1,15 @@
-﻿using Microsoft.CSharp;
-using System;
-using System.CodeDom;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace ServiceActor
 {
     public partial class ServiceActorWrapperTemplate
     {
-        public ServiceActorWrapperTemplate(Type typeToWrap, bool sharedQueue = false)
+        public ServiceActorWrapperTemplate(Type typeToWrap)
         {
             TypeToWrap = typeToWrap ?? throw new ArgumentNullException(nameof(typeToWrap));
-            SharedQueue = sharedQueue;
 
             if (!TypeToWrap.IsInterface)
             {
@@ -24,16 +20,84 @@ namespace ServiceActor
             {
                 throw new InvalidOperationException("Typet to wrap should not contain events");
             }
+
+            _blockCallerByDefault = BlockCaller(TypeToWrap);
         }
 
         public Type TypeToWrap { get; }
-        public bool SharedQueue { get; }
 
-        public string TypeToWrapFullName => TypeToWrap.GetTypeReferenceCode();
+        private string TypeToWrapFullName => TypeToWrap.GetTypeReferenceCode();
 
-        public IEnumerable<MethodInfo> GetMethods() => TypeToWrap
+        private bool _blockCallerByDefault = false;
+
+        private IEnumerable<MethodInfo> GetMethods() => TypeToWrap
             .GetMethods()
             .Where(_ => !_.Name.StartsWith("get_") && !_.Name.StartsWith("set_") && !_.Name.StartsWith("add_") && !_.Name.StartsWith("remove_"));
-    }
 
+        private bool PropertyGetAllowsConcurrentAccess(PropertyInfo propertyInfo)
+        {
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
+            {
+                return concurrentAccessAttribute.PropertyGet;
+            }
+
+            return false;
+        }
+
+        private bool PropertySetAllowsConcurrentAccess(PropertyInfo propertyInfo)
+        {
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
+            {
+                return concurrentAccessAttribute.PropertySet;
+            }
+
+            return false;
+        }
+
+        private bool MethodAllowsConcurrentAccess(MethodInfo methodInfo)
+        {
+            if (Attribute.GetCustomAttribute(methodInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool BlockCaller(Type type)
+        {
+            if (Attribute.GetCustomAttribute(type, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool BlockCaller(PropertyInfo propertyInfo)
+        {
+            if (_blockCallerByDefault)
+                return true;
+
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool BlockCaller(MethodInfo methodInfo)
+        {
+            if (_blockCallerByDefault)
+                return true;
+
+            if (Attribute.GetCustomAttribute(methodInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
 }

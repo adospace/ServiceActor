@@ -13,6 +13,7 @@ namespace ServiceActor.Tests
             int SimplePropertyGet { get; }
             int SimplePropertySet { get; }
             int SimplePropertyGetSet { get; set; }
+
             void SimpleMethod();
 
             void SimpleMethodWithArguments(int i);
@@ -20,8 +21,6 @@ namespace ServiceActor.Tests
             void SimpleMethodWithGenericArguments<T1, T2>(T1 t1, T2 t2);
 
             void SimpleMethosWithComplexArguments<T1, T2>(Action<T1> action, IDictionary<T1, T2> dict);
-
-
 
             Task TaskMethod();
 
@@ -31,8 +30,6 @@ namespace ServiceActor.Tests
 
             Task TaskMethosWithComplexArguments<T1, T2>(Action<T1> action, IDictionary<T1, T2> dict);
 
-
-
             Task<int> TaskMethodWithReturnType();
 
             Task<int> TaskMethodWithReturnTypeAndWithArguments(int i);
@@ -40,8 +37,6 @@ namespace ServiceActor.Tests
             Task<int> TaskMethodWithReturnTypeAndWithGenericArguments<T1, T2>(T1 t1, T2 t2);
 
             Task<int> TaskMethodWithReturnTypeAndWithWithComplexArguments<T1, T2>(Action<T1> action, IDictionary<T1, T2> dict);
-
-
 
             Task<Action<int>> TaskMethodWithComplexReturnType();
 
@@ -156,7 +151,11 @@ namespace ServiceActor.Tests
 
         public class TestServiceWithEvents : ITestServiceWithEvents
         {
+#pragma warning disable 0067
+
             public event EventHandler Event;
+
+#pragma warning restore 0067
         }
 
         [TestMethod]

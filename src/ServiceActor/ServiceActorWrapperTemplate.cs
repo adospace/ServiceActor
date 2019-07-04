@@ -104,6 +104,27 @@ namespace ServiceActor
             this.Write("        get\r\n        {\r\n            ");
             
             #line 30 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (PropertyGetAllowsConcurrentAccess(property)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            return _objectToWrap.");
+            
+            #line 32 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\r\n            ");
+            
+            #line 34 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            ");
+            
+            #line 36 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.PropertyType.GetTypeReferenceCode()));
             
             #line default
@@ -112,118 +133,292 @@ namespace ServiceActor
                     "        _actionQueue.Enqueue(() =>\r\n            {\r\n                res = _object" +
                     "ToWrap.");
             
-            #line 34 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 40 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
             #line hidden
             this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n            executedEve" +
-                    "nt.WaitOne();\r\n            return res;\r\n        }\r\n        ");
+                    "nt.WaitOne();\r\n            return res;\r\n\r\n            ");
             
-            #line 40 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 46 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("        }\r\n        ");
+            
+            #line 48 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("        ");
             
-            #line 41 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 49 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (property.CanWrite) { 
             
             #line default
             #line hidden
-            this.Write("        set\r\n        {\r\n            _actionQueue.Enqueue(() =>\r\n            {\r\n  " +
-                    "              _objectToWrap.");
+            this.Write("        set\r\n        {\r\n            ");
             
-            #line 46 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 52 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (PropertySetAllowsConcurrentAccess(property)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            _objectToWrap.");
+            
+            #line 54 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
             #line hidden
-            this.Write(" = value;\r\n            });\r\n        }\r\n        ");
+            this.Write(" = value;\r\n\r\n            ");
             
-            #line 49 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 56 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n                ");
+            
+            #line 58 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (BlockCaller(property)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n                var executedEvent = new AutoResetEvent(false);\r\n               " +
+                    " _actionQueue.Enqueue(() =>\r\n                {\r\n                    _objectToWra" +
+                    "p.");
+            
+            #line 63 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
+            
+            #line default
+            #line hidden
+            this.Write(" = value;\r\n                    executedEvent.Set();\r\n                });\r\n       " +
+                    "         executedEvent.WaitOne();\r\n\r\n                ");
+            
+            #line 68 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n                _actionQueue.Enqueue(() =>\r\n                {\r\n                " +
+                    "    _objectToWrap.");
+            
+            #line 72 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
+            
+            #line default
+            #line hidden
+            this.Write(" = value;\r\n                });\r\n\r\n                ");
+            
+            #line 75 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            ");
+            
+            #line 77 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("        }\r\n        ");
+            
+            #line 79 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("    }\r\n\t");
             
-            #line 51 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 81 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n    ");
             
-            #line 53 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 83 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  foreach (var method in GetMethods()) { 
             
             #line default
             #line hidden
-            this.Write("        \r\n    \r\n        ");
+            this.Write("    \r\n        ");
             
-            #line 56 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 85 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (method.ReturnType == typeof(void)) { 
             
             #line default
             #line hidden
             this.Write("        public ");
             
-            #line 57 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
-            
-            #line default
-            #line hidden
-            this.Write("\r\n        {\r\n            _actionQueue.Enqueue(() =>\r\n            {\r\n             " +
-                    "   _objectToWrap.");
-            
-            #line 61 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
-            
-            #line default
-            #line hidden
-            this.Write(";\r\n            });\r\n        }\r\n        ");
-            
-            #line 64 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- } else if (method.ReturnType == typeof(Task)) { 
-            
-            #line default
-            #line hidden
-            this.Write("        public ");
-            
-            #line 65 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
-            
-            #line default
-            #line hidden
-            this.Write("\r\n        {\r\n            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent" +
-                    "(false);\r\n            _actionQueue.Enqueue(async () =>\r\n            {\r\n         " +
-                    "       await _objectToWrap.");
-            
-            #line 70 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
-            
-            #line default
-            #line hidden
-            this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n\r\n            return ex" +
-                    "ecutedEvent.WaitAsync();\r\n        }\r\n        ");
-            
-            #line 76 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- } else if (method.ReturnType.BaseType == typeof(Task)) { 
-            
-            #line default
-            #line hidden
-            this.Write("        public async ");
-            
-            #line 77 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 86 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
             this.Write("\r\n        {\r\n            ");
             
-            #line 79 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 88 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (MethodAllowsConcurrentAccess(method)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            _objectToWrap.");
+            
+            #line 90 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\r\n            ");
+            
+            #line 92 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n                ");
+            
+            #line 94 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (BlockCaller(method)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n                var executedEvent = new AutoResetEvent(false);\r\n               " +
+                    " _actionQueue.Enqueue(() =>\r\n                {\r\n                    _objectToWra" +
+                    "p.");
+            
+            #line 99 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n                    executedEvent.Set();\r\n                });\r\n               " +
+                    " executedEvent.WaitOne();\r\n\r\n                ");
+            
+            #line 104 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n                _actionQueue.Enqueue(() =>\r\n                {\r\n                " +
+                    "    _objectToWrap.");
+            
+            #line 108 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n                });\r\n\r\n                ");
+            
+            #line 111 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            ");
+            
+            #line 113 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("        }\r\n        ");
+            
+            #line 115 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else if (method.ReturnType == typeof(Task)) { 
+            
+            #line default
+            #line hidden
+            this.Write("        public ");
+            
+            #line 116 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n        {\r\n            ");
+            
+            #line 118 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (MethodAllowsConcurrentAccess(method)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            return _objectToWrap.");
+            
+            #line 120 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\r\n            ");
+            
+            #line 122 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);\r\n " +
+                    "           _actionQueue.Enqueue(async () =>\r\n            {\r\n                awai" +
+                    "t _objectToWrap.");
+            
+            #line 127 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n\r\n            return ex" +
+                    "ecutedEvent.WaitAsync();\r\n\r\n            ");
+            
+            #line 133 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n        }\r\n        ");
+            
+            #line 136 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else if (method.ReturnType.BaseType == typeof(Task)) { 
+            
+            #line default
+            #line hidden
+            this.Write("        public async ");
+            
+            #line 137 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n        {\r\n            ");
+            
+            #line 139 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (MethodAllowsConcurrentAccess(method)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            return await _objectToWrap.");
+            
+            #line 141 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            
+            #line default
+            #line hidden
+            this.Write(";\r\n\r\n            ");
+            
+            #line 143 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            ");
+            
+            #line 145 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
             
             #line default
@@ -232,29 +427,57 @@ namespace ServiceActor
                     "vent(false);\r\n            _actionQueue.Enqueue(async () =>\r\n            {\r\n     " +
                     "           res = await _objectToWrap.");
             
-            #line 83 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 149 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
             
             #line default
             #line hidden
             this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n\r\n            await exe" +
-                    "cutedEvent.WaitAsync();\r\n            return res;\r\n        }\r\n        ");
+                    "cutedEvent.WaitAsync();\r\n            return res;\r\n\r\n            ");
             
-            #line 90 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 156 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n        }\r\n        ");
+            
+            #line 159 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
             #line hidden
             this.Write("        public ");
             
-            #line 91 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 160 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
             this.Write("\r\n        {\r\n            ");
             
-            #line 93 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 162 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ if (MethodAllowsConcurrentAccess(method)) { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            return _objectToWrap.");
+            
+            #line 164 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\r\n            ");
+            
+            #line 166 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } else { 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n            ");
+            
+            #line 168 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.ReturnType.GetTypeReferenceCode()));
             
             #line default
@@ -263,36 +486,43 @@ namespace ServiceActor
                     "        _actionQueue.Enqueue(() =>\r\n            {\r\n                res = _object" +
                     "ToWrap.");
             
-            #line 97 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 172 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
             
             #line default
             #line hidden
             this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n            executedEve" +
-                    "nt.WaitOne();\r\n            return res;\r\n        }\r\n        ");
+                    "nt.WaitOne();\r\n            return res;\r\n\r\n            ");
             
-            #line 103 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 178 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+ } 
+            
+            #line default
+            #line hidden
+            this.Write("\r\n        }\r\n        ");
+            
+            #line 181 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n    ");
             
-            #line 105 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 183 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("    \r\n}\r\n\r\nreturn new ");
             
-            #line 109 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 187 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrap.Name));
             
             #line default
             #line hidden
             this.Write("AsyncActorWrapper((");
             
-            #line 109 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 187 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapFullName));
             
             #line default

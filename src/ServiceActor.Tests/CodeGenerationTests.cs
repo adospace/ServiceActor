@@ -90,7 +90,6 @@ namespace ServiceActor.Tests
             void TestMethod<T1, T2>(T1 i, IDictionary<string, Action<T1>> dict);
 
             Task<T3> TestMethod<T1, T2, T3>(T1 i, IDictionary<string, Action<T1>> dict, out T3 t3);
-
         }
 
         [TestMethod]
@@ -98,7 +97,6 @@ namespace ServiceActor.Tests
         {
             Assert.AreEqual("void TestMethod()", typeof(ITestItfWithMethods).GetMethods()[0].GetMethodDeclarationCode());
         }
-
 
         [TestMethod]
         public void ShouldGenerateInvocationCodeForSimpleMethod()

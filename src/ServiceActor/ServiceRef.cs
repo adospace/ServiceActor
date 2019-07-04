@@ -15,12 +15,16 @@ namespace ServiceActor
             public ActionQueue ActionQueueToShare { get; set; }
         }
 
-        private static ConcurrentDictionary<object, object> _wrappersCache = new ConcurrentDictionary<object, object>();
+        private static readonly ConcurrentDictionary<object, object> _wrappersCache = new ConcurrentDictionary<object, object>();
 
+        private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
 
-        public static T Create<T>(T objectToWrap)
+        public static T Create<T>(T objectToWrap) where T : class
         {
-            //Console.WriteLine(new ServiceActorWrapperTemplate(typeof(T)).TransformText());
+            if (objectToWrap == null)
+            {
+                throw new ArgumentNullException(nameof(objectToWrap));
+            }
 
             //NOTE: Do not user AddOrUpdate() to avoid _wrapperCache lock while generating wrapper
             if (_wrappersCache.TryGetValue(objectToWrap, out var wrapper))
@@ -33,7 +37,7 @@ namespace ServiceActor
                     Assembly.GetExecutingAssembly(),
                     typeof(T).Assembly,
                     typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-                globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = new ActionQueue() }
+                globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = GetActionQueueFor(objectToWrap) }
                 ).Result;
 
             _wrappersCache.TryAdd(objectToWrap, wrapper);
@@ -43,6 +47,14 @@ namespace ServiceActor
             return (T)wrapper;
         }
 
+        private static ActionQueue GetActionQueueFor(object objectToWrap)
+        {
+            if (Attribute.GetCustomAttribute(objectToWrap.GetType(), typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
+            {
+                return _queuesCache.AddOrUpdate(serviceDomain.DomainKey, new ActionQueue(), (key, oldValue) => oldValue);
+            }
 
+            return new ActionQueue();
+        }
     }
 }

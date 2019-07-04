@@ -1,10 +1,6 @@
-﻿using Microsoft.CSharp;
-using System;
-using System.CodeDom;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace ServiceActor
 {
@@ -40,7 +36,7 @@ namespace ServiceActor
             if (!methodInfo.IsGenericMethod)
                 return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
 
-            return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_=>_.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
+            return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_ => _.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
         }
 
         public static string GetMethodInvocationCode(this MethodInfo methodInfo)
@@ -80,7 +76,5 @@ namespace ServiceActor
 
             throw new NotSupportedException();
         }
-
-        
     }
 }
