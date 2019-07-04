@@ -80,7 +80,8 @@ private class Counter : ICounter
 ```
 
 If you're here, you probably knows that locking resources has some disadvantages expecially in large projects with many services and many threads running on. 
-Actually there are a lot of articles on internet explaining why in some scenarios locking resources is a recipe for a disaster. Actually I know that in many cases expert programmers can create high-prefomance and perfectly working code.
+Actually there are a lot of articles on internet explaining why in some scenarios locking resources is a recipe for a disaster but I also know that in many cases expert programmers can create high-prefomance and perfectly working code. 
+This is why I created (and use this library in large projects) with the intent to create a tool to facilitate multithreading code and not a one-way design pattern. 
 What Serviceactor tries to do is to somewhat introduce the actor model paradigm in this scenario without requiring a complete rewrite or design of the services implementation classes.
 Using ServiceActor final code would be almost the same but without locks:
 ```c#
