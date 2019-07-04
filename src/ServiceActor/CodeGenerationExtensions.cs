@@ -37,12 +37,18 @@ namespace ServiceActor
             if (!methodInfo.IsGenericMethod)
                 return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))})";
 
-            return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_ => _.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))}) {GetGenericParameterConstraintsDeclarationCode(methodInfo)}";
+            return $"{methodInfo.ReturnType.GetTypeReferenceCode()} {methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_ => _.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.GetTypeReferenceCode() + " " + _.Name))}) {GetGenericParameterConstraintsDeclarationCode(methodInfo)}".TrimEnd();
         }
 
         private static string GetGenericParameterConstraintsDeclarationCode(MethodInfo methodInfo)
         {
-            return string.Join(" ", methodInfo.GetGenericArguments().Select(_ => "where " + _.Name + ": " + string.Join(", ", _.GetGenericParameterConstraints().Select(c => c.GetTypeReferenceCode()))));
+            return string.Join(" ", 
+                methodInfo
+                    .GetGenericArguments()
+                    .Select(_ => 
+                        _.GetGenericParameterConstraints().Any() ? 
+                        ("where " + _.Name + ": " + string.Join(", ", _.GetGenericParameterConstraints().Select(c => c.GetTypeReferenceCode()))) : 
+                        string.Empty));
         }
 
         public static string GetMethodInvocationCode(this MethodInfo methodInfo)
