@@ -31,7 +31,7 @@ namespace ServiceActor
                 return (T)wrapper;
 
             var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T)).TransformText();
-            Console.WriteLine(asyncActorCode);
+            //Console.WriteLine(asyncActorCode);
             wrapper = CSharpScript.EvaluateAsync<T>(
                 asyncActorCode,
                 options: ScriptOptions.Default.AddReferences(

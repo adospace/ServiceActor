@@ -11,6 +11,7 @@ namespace ServiceActor
         private readonly ActionBlock<InvocationItem> _actionQueue;
         private int? _executingActionThreadId;
         private readonly ConcurrentDictionary<object, object> _targets = new ConcurrentDictionary<object, object>();
+        private InvocationItem _executingInvocationItem;
 
         private class InvocationItem
         {
@@ -27,7 +28,18 @@ namespace ServiceActor
                 {
                     //Console.WriteLine($"Current Thread ID Before action.Invoke: {Thread.CurrentThread.ManagedThreadId}");
                     _executingActionThreadId = Thread.CurrentThread.ManagedThreadId;
-                    AsyncContext.Run(invocation.Action);
+                    try
+                    {
+                        //System.Diagnostics.Debug.WriteLine($"-----Executing {invocation.Action.Target} {invocation.Action.Method}...");
+                        _executingInvocationItem = invocation;
+                        AsyncContext.Run(invocation.Action);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine(ex);
+                    }
+
+                    //System.Diagnostics.Debug.WriteLine($"-----Executed {invocation.Action.Target} {invocation.Action.Method}");
                     _executingActionThreadId = null;
                     //action.Invoke();
                     //Console.WriteLine($"Current Thread ID After action.Invoke: {Thread.CurrentThread.ManagedThreadId}");
