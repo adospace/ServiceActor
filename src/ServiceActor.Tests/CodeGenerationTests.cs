@@ -92,6 +92,9 @@ namespace ServiceActor.Tests
             Task<T3> TestMethod<T1, T2, T3>(T1 i, IDictionary<string, Action<T1>> dict, out T3 t3);
 
             void TestMethod<T1, T2>(T1 clonable) where T1: ICloneable, IAsyncResult where T2: IComparable;
+
+            void TestMethod(ref int rowsCount, ref int queryID);
+
         }
 
         [TestMethod]
@@ -147,5 +150,24 @@ namespace ServiceActor.Tests
         {
             Assert.AreEqual("void TestMethod<T1, T2>(T1 clonable) where T1: System.ICloneable, System.IAsyncResult where T2: System.IComparable", typeof(ITestItfWithMethods).GetMethods()[4].GetMethodDeclarationCode());
         }
+
+        [TestMethod]
+        public void ShouldGenerateInvocationCodeForGenericMethodWithParametersConstraint()
+        {
+            Assert.AreEqual("TestMethod<T1, T2>(clonable)", typeof(ITestItfWithMethods).GetMethods()[4].GetMethodInvocationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateDeclarationCodeForRefParameters()
+        {
+            Assert.AreEqual("void TestMethod(ref System.Int32 rowsCount, ref System.Int32 queryID)", typeof(ITestItfWithMethods).GetMethods()[5].GetMethodDeclarationCode());
+        }
+
+        [TestMethod]
+        public void ShouldGenerateInvocationCodeForRefParameters()
+        {
+            Assert.AreEqual("TestMethod(rowsCount, queryID)", typeof(ITestItfWithMethods).GetMethods()[5].GetMethodInvocationCode());
+        }
+
     }
 }

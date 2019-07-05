@@ -66,6 +66,11 @@ namespace ServiceActor.Tests
                 throw new NotImplementedException();
             }
 
+            public void SimpleMethodWithArguments(ref int i, out string s)
+            {
+                throw new NotImplementedException();
+            }
+
             public void SimpleMethodWithGenericArguments<T1, T2>(T1 t1, T2 t2)
             {
                 throw new NotImplementedException();
@@ -144,6 +149,27 @@ namespace ServiceActor.Tests
 
             Assert.IsNotNull(serviceRef);
         }
+
+        public interface ITestServiceWithRefOutParemeters
+        {
+            void MethodWithRefOutParameter(ref int i, out string s);
+        }
+
+        public class TestServiceWithRefOutParemeters : ITestServiceWithRefOutParemeters
+        {
+            public void MethodWithRefOutParameter(ref int i, out string s)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [TestMethod]
+        public void ShouldCreateRefThrowExceptionWhenTypeDefineMethodsWithRefOutParameters()
+        {
+            Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.Create<ITestServiceWithRefOutParemeters>(new TestServiceWithRefOutParemeters()));
+        }
+
+
 
         public interface ITestServiceWithEvents
         {

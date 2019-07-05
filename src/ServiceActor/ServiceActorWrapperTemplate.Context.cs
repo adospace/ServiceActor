@@ -21,6 +21,8 @@ namespace ServiceActor
                 throw new InvalidOperationException("Typet to wrap should not contain events");
             }
 
+            ThrowIfRefOutParametersExistsForMethodsWithoutTheAllowConcurrentAccessAttribute();
+
             _blockCallerByDefault = BlockCaller(TypeToWrap);
             _keepAsyncContextDefault = KeepAsyncContext(TypeToWrap);
         }
@@ -39,6 +41,16 @@ namespace ServiceActor
 
         private IEnumerable<PropertyInfo> GetProperties() => TypeToWrap
             .GetFlattenProperties();
+
+        private void ThrowIfRefOutParametersExistsForMethodsWithoutTheAllowConcurrentAccessAttribute()
+        {
+            foreach (var method in GetMethods()
+                .Where(_ => _.GetParameters().Any(p => p.IsOut || p.ParameterType.IsByRef)))
+            {
+                if (!MethodAllowsConcurrentAccess(method))
+                    throw new InvalidOperationException($"Method '{method.Name}' of '{TypeToWrapFullName}' contains ref or out parameters but not support concurrent access (MethodAllowsConcurrentAccess attribute)");
+            }
+        }
 
         private bool PropertyGetAllowsConcurrentAccess(PropertyInfo propertyInfo)
         {
