@@ -324,5 +324,50 @@ namespace ServiceActor.Tests
             serviceA.UseServiceB();
             Assert.IsTrue(serviceB.ServiceUsed);
         }
+
+        public interface IBlockingTestCounter
+        {
+            int Count { get; }
+
+            void NotBlockingIncrement();
+
+            [BlockCaller]
+            void BlockingIncrement();
+        }
+
+        private class BlockingTestCounter : IBlockingTestCounter
+        {
+            public int Count { get; private set; }
+
+            public void BlockingIncrement()
+            {
+                Count += 1;
+            }
+
+            public void NotBlockingIncrement()
+            {
+                Count += 1;
+            }
+        }
+
+        [TestMethod]
+        public void ServiceActorWithBlockingVoidCallShouldWorkAsExpected()
+        {
+            //keep a reference to the actual implementation class just to be able to 
+            //read the Count property without pass thru the wrapper
+            var private_counter_ref = new BlockingTestCounter();
+            var counter = ServiceRef.Create<IBlockingTestCounter>(private_counter_ref);
+
+            counter.NotBlockingIncrement();
+            //as the previous call is not blocking here the count is still 0 
+            Assert.AreEqual(0, private_counter_ref.Count);
+
+            //now perform a blocking call (method marked with [BlockCaller] attribute)
+            counter.BlockingIncrement();
+
+            //here we can be sure that both previous call has been invoked to the actual class
+            Assert.AreEqual(2, private_counter_ref.Count);
+        }
+
     }
 }

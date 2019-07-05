@@ -22,15 +22,16 @@ namespace ServiceActor
             }
 
             _blockCallerByDefault = BlockCaller(TypeToWrap);
+            _keepAsyncContextDefault = KeepAsyncContext(TypeToWrap);
         }
 
         public Type TypeToWrap { get; }
 
         private string TypeToWrapFullName => TypeToWrap.GetTypeReferenceCode();
 
-        private bool _blockCallerByDefault = false;
+        private readonly bool _blockCallerByDefault = false;
 
-        private const BindingFlags _flags = BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance;
+        private readonly bool _keepAsyncContextDefault = false;
 
         private IEnumerable<MethodInfo> GetMethods() => TypeToWrap
             .GetFlattenMethods()
@@ -81,28 +82,52 @@ namespace ServiceActor
 
         private bool BlockCaller(PropertyInfo propertyInfo)
         {
-            if (_blockCallerByDefault)
-                return true;
-
             if (Attribute.GetCustomAttribute(propertyInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
             {
                 return true;
             }
 
-            return false;
+            return _blockCallerByDefault;
         }
 
         private bool BlockCaller(MethodInfo methodInfo)
         {
-            if (_blockCallerByDefault)
-                return true;
-
             if (Attribute.GetCustomAttribute(methodInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
             {
                 return true;
             }
 
-            return false;
+            return _blockCallerByDefault;
+        }
+
+        private bool KeepAsyncContext(Type type)
+        {
+            if (Attribute.GetCustomAttribute(type, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
+            {
+                return keepAsyncContextAttribute.KeepContext;
+            }
+
+            return true;
+        }
+
+        private bool KeepAsyncContext(PropertyInfo propertyInfo)
+        {
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
+            {
+                return keepAsyncContextAttribute.KeepContext;
+            }
+
+            return _keepAsyncContextDefault;
+        }
+
+        private bool KeepAsyncContext(MethodInfo methodInfo)
+        {
+            if (Attribute.GetCustomAttribute(methodInfo, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
+            {
+                return keepAsyncContextAttribute.KeepContext;
+            }
+
+            return _keepAsyncContextDefault;
         }
     }
 }

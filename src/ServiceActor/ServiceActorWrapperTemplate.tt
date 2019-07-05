@@ -39,7 +39,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             {
                 res = _objectToWrap.<#= property.Name #>;
                 executedEvent.Set();
-            });
+            }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
             executedEvent.WaitOne();
             return res;
 
@@ -62,7 +62,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 {
                     _objectToWrap.<#= property.Name #> = value;
                     executedEvent.Set();
-                });
+                }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
                 executedEvent.WaitOne();
 
                 <# } else { #>
@@ -70,7 +70,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 _actionQueue.Enqueue(() =>
                 {
                     _objectToWrap.<#= property.Name #> = value;
-                });
+                }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
 
                 <# } #>
 
@@ -98,7 +98,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 {
                     _objectToWrap.<#= method.GetMethodInvocationCode() #>;
                     executedEvent.Set();
-                });
+                }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
                 executedEvent.WaitOne();
 
                 <# } else { #>
@@ -106,7 +106,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 _actionQueue.Enqueue(() =>
                 {
                     _objectToWrap.<#= method.GetMethodInvocationCode() #>;
-                });
+                }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
                 <# } #>
 
@@ -126,7 +126,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             {
                 await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
                 executedEvent.Set();
-            });
+            }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
             return executedEvent.WaitAsync();
 
@@ -148,7 +148,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             {
                 res = await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
                 executedEvent.Set();
-            });
+            }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
             await executedEvent.WaitAsync();
             return res;
@@ -171,7 +171,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             {
                 res = _objectToWrap.<#= method.GetMethodInvocationCode() #>;
                 executedEvent.Set();
-            });
+            }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
             executedEvent.WaitOne();
             return res;
 

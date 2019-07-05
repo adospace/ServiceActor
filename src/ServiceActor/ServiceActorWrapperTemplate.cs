@@ -138,8 +138,15 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n            executedEve" +
-                    "nt.WaitOne();\r\n            return res;\r\n\r\n            ");
+            this.Write(";\r\n                executedEvent.Set();\r\n            }, ");
+            
+            #line 42 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n            executedEvent.WaitOne();\r\n            return res;\r\n\r\n            " +
+                    "");
             
             #line 46 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
@@ -197,8 +204,14 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(" = value;\r\n                    executedEvent.Set();\r\n                });\r\n       " +
-                    "         executedEvent.WaitOne();\r\n\r\n                ");
+            this.Write(" = value;\r\n                    executedEvent.Set();\r\n                }, ");
+            
+            #line 65 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n                executedEvent.WaitOne();\r\n\r\n                ");
             
             #line 68 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
@@ -213,7 +226,14 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(" = value;\r\n                });\r\n\r\n                ");
+            this.Write(" = value;\r\n                }, ");
+            
+            #line 73 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n\r\n                ");
             
             #line 75 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
@@ -299,8 +319,14 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(";\r\n                    executedEvent.Set();\r\n                });\r\n               " +
-                    " executedEvent.WaitOne();\r\n\r\n                ");
+            this.Write(";\r\n                    executedEvent.Set();\r\n                }, ");
+            
+            #line 101 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n                executedEvent.WaitOne();\r\n\r\n                ");
             
             #line 104 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
@@ -315,7 +341,14 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(";\r\n                });\r\n\r\n                ");
+            this.Write(";\r\n                }, ");
+            
+            #line 109 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n\r\n                ");
             
             #line 111 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
@@ -373,8 +406,14 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n\r\n            return ex" +
-                    "ecutedEvent.WaitAsync();\r\n\r\n            ");
+            this.Write(";\r\n                executedEvent.Set();\r\n            }, ");
+            
+            #line 129 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n\r\n            return executedEvent.WaitAsync();\r\n\r\n            ");
             
             #line 133 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
@@ -432,8 +471,15 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n\r\n            await exe" +
-                    "cutedEvent.WaitAsync();\r\n            return res;\r\n\r\n            ");
+            this.Write(";\r\n                executedEvent.Set();\r\n            }, ");
+            
+            #line 151 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n\r\n            await executedEvent.WaitAsync();\r\n            return res;\r\n\r\n  " +
+                    "          ");
             
             #line 156 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
@@ -491,8 +537,15 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(";\r\n                executedEvent.Set();\r\n            });\r\n            executedEve" +
-                    "nt.WaitOne();\r\n            return res;\r\n\r\n            ");
+            this.Write(";\r\n                executedEvent.Set();\r\n            }, ");
+            
+            #line 174 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
+            
+            #line default
+            #line hidden
+            this.Write(");\r\n            executedEvent.WaitOne();\r\n            return res;\r\n\r\n            " +
+                    "");
             
             #line 178 "D:\Source\Projects\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
