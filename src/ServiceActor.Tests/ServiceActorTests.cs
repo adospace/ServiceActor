@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ServiceActor.Tests
@@ -395,5 +396,32 @@ namespace ServiceActor.Tests
             Assert.AreEqual(2, private_counter_ref.Count);
         }
 
+        public interface IAsyncCounter
+        {
+            int Count { get; }
+
+            Task IncrementAsync();
+        }
+
+        private class CounterAsync : IAsyncCounter
+        {
+            public int Count { get; protected set; }
+
+            public async Task IncrementAsync()
+            {
+                int threadId = Thread.CurrentThread.ManagedThreadId;
+                await Task.Delay(100);
+                Count += 1;
+                Assert.AreEqual(threadId, Thread.CurrentThread.ManagedThreadId);
+            }
+        }
+
+        [TestMethod]
+        public async Task ServiceActorShouldRestoreThSynchronizationContext()
+        {
+            var asyncConter = ServiceRef.Create<IAsyncCounter>(new CounterAsync());
+
+            await asyncConter.IncrementAsync();
+        }
     }
 }
