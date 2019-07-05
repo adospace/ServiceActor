@@ -35,12 +35,26 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
             <#= property.PropertyType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
+            Exception exceptionThrown = null;
             _actionQueue.Enqueue(() =>
             {
-                res = _objectToWrap.<#= property.Name #>;
+                try
+                {
+                    res = _objectToWrap.<#= property.Name #>;
+                }
+                catch (Exception ex)
+                {
+                    exceptionThrown = ex;
+                }
+
                 executedEvent.Set();
             }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
+
             executedEvent.WaitOne();
+
+            if (exceptionThrown != null)
+                throw exceptionThrown;
+
             return res;
 
             <# } #>
@@ -58,12 +72,26 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 <# if (BlockCaller(property)) { #>
 
                 var executedEvent = new AutoResetEvent(false);
+                Exception exceptionThrown = null;
+
                 _actionQueue.Enqueue(() =>
                 {
-                    _objectToWrap.<#= property.Name #> = value;
+                    try
+                    {
+                        _objectToWrap.<#= property.Name #> = value;
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptionThrown = ex;
+                    }
+
                     executedEvent.Set();
                 }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
+
                 executedEvent.WaitOne();
+
+                if (exceptionThrown != null)
+                    throw exceptionThrown;
 
                 <# } else { #>
 
@@ -94,11 +122,23 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 <# if (BlockCaller(method)) { #>
 
                 var executedEvent = new AutoResetEvent(false);
+                Exception exceptionThrown = null;
                 _actionQueue.Enqueue(() =>
                 {
-                    _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    try
+                    {
+                        _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptionThrown = ex;
+                    }
                     executedEvent.Set();
                 }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
+
+                if (exceptionThrown != null)
+                    throw exceptionThrown;
+
                 executedEvent.WaitOne();
 
                 <# } else { #>
@@ -122,11 +162,22 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             <# } else { #>
 
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
+            Exception exceptionThrown = null;
             _actionQueue.Enqueue(async () =>
             {
-                await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                try
+                {
+                    await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                }
+                catch (Exception ex)
+                {
+                    exceptionThrown = ex;
+                }
                 executedEvent.Set();
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
+
+            if (exceptionThrown != null)
+                throw exceptionThrown;
 
             return executedEvent.WaitAsync();
 
@@ -144,17 +195,28 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
             <#= method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
+            Exception exceptionThrown = null;
             _actionQueue.Enqueue(async () =>
             {
-                res = await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                try
+                {
+                    res = await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                }
+                catch (Exception ex)
+                {
+                    exceptionThrown = ex;
+                }
                 executedEvent.Set();
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
             await executedEvent.WaitAsync();
+
+            if (exceptionThrown != null)
+                throw exceptionThrown;
+
             return res;
 
             <# } #>
-
         }
         <# } else { #>
         public <#= method.GetMethodDeclarationCode() #>
@@ -167,12 +229,22 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
             <#= method.ReturnType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
+            Exception exceptionThrown = null;
             _actionQueue.Enqueue(() =>
             {
-                res = _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                try
+                {
+                    res = _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                }
+                catch (Exception ex)
+                {
+                    exceptionThrown = ex;
+                }
                 executedEvent.Set();
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
             executedEvent.WaitOne();
+            if (exceptionThrown != null)
+                throw exceptionThrown;
             return res;
 
             <# } #>

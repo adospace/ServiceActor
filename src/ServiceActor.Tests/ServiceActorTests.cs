@@ -243,6 +243,16 @@ namespace ServiceActor.Tests
             Assert.AreEqual(10, counter.Count);
         }
 
+        [TestMethod]
+        public void AccessingPropertyAfterMethodInvocationShouldWork()
+        {
+            var counter = ServiceRef.Create<ICounter>(new Counter());
+
+            counter.Increment();
+
+            Assert.AreEqual(1, counter.Count);
+        }
+
         public interface IAdvancedCounter : ICounter
         {
             void Increment(int countToAdd);
@@ -422,6 +432,32 @@ namespace ServiceActor.Tests
             var asyncConter = ServiceRef.Create<IAsyncCounter>(new CounterAsync());
 
             await asyncConter.IncrementAsync();
+        }
+
+        public interface IServiceWithException
+        {
+            int PropertyThatRaiseException { get; }
+
+            int MethodThatRaiseException();
+        }
+
+        private class ServiceWithException : IServiceWithException
+        {
+            public int PropertyThatRaiseException => throw new NotImplementedException();
+
+            public int MethodThatRaiseException()
+            {
+                throw new IndexOutOfRangeException();
+            }
+        }
+
+        [TestMethod]
+        public void ServiceActorShouldRethrowExceptions()
+        {
+            var service = ServiceRef.Create<IServiceWithException>(new ServiceWithException());
+
+            Assert.ThrowsException<IndexOutOfRangeException>(()=> service.MethodThatRaiseException());
+            Assert.ThrowsException<NotImplementedException>(() => service.PropertyThatRaiseException);
         }
     }
 }
