@@ -459,5 +459,31 @@ namespace ServiceActor.Tests
             Assert.ThrowsException<IndexOutOfRangeException>(()=> service.MethodThatRaiseException());
             Assert.ThrowsException<NotImplementedException>(() => service.PropertyThatRaiseException);
         }
+
+        public interface IService1
+        {
+
+        }
+
+        public interface IService2
+        {
+
+        }
+
+        private class MultiInterfaceService : IService1, IService2
+        {
+
+        }
+
+        [TestMethod]
+        public void ServiceActorShouldWorkWithServiceImplementingMoreInterfaces()
+        {
+            var multiItfService = new MultiInterfaceService();
+            var service1 = ServiceRef.Create<IService1>(multiItfService);
+            var service2 = ServiceRef.Create<IService2>(multiItfService);
+
+            Assert.IsNotNull(service1);
+            Assert.IsNotNull(service2);
+        }
     }
 }

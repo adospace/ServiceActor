@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 
 namespace ServiceActor
@@ -15,20 +16,32 @@ namespace ServiceActor
             public ActionQueue ActionQueueToShare { get; set; }
         }
 
-        private static readonly ConcurrentDictionary<object, object> _wrappersCache = new ConcurrentDictionary<object, object>();
+        private static readonly ConcurrentDictionary<object, ConcurrentDictionary<Type, object>> _wrappersCache = new ConcurrentDictionary<object, ConcurrentDictionary<Type, object>>();
 
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
 
-        public static T Create<T>(T objectToWrap) where T : class
+        public static T Create<T>(T objectToWrap, object aggregateKey = null) where T : class
         {
             if (objectToWrap == null)
             {
                 throw new ArgumentNullException(nameof(objectToWrap));
             }
 
-            //NOTE: Do not user AddOrUpdate() to avoid _wrapperCache lock while generating wrapper
-            if (_wrappersCache.TryGetValue(objectToWrap, out var wrapper))
-                return (T)wrapper;
+            //NOTE: Do not use AddOrUpdate() to avoid _wrapperCache lock while generating wrapper
+
+            ActionQueue actionQueue = null;
+            object wrapper;
+            if (_wrappersCache.TryGetValue(objectToWrap, out var wrapperTypes))
+            {
+                if (wrapperTypes.TryGetValue(typeof(T), out wrapper))
+                    return (T)wrapper;
+
+                var firstWrapper = wrapperTypes.First().Value;
+
+                actionQueue = (ActionQueue)firstWrapper.GetType().GetField("_actionQueue", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(firstWrapper);
+            }
+
+            actionQueue = actionQueue ?? GetActionQueueFor(typeof(T), aggregateKey);
 
             var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T)).TransformText();
             //Console.WriteLine(asyncActorCode);
@@ -38,18 +51,24 @@ namespace ServiceActor
                     Assembly.GetExecutingAssembly(),
                     typeof(T).Assembly,
                     typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-                globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = GetActionQueueFor(typeof(T)) }
+                globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }
                 ).Result;
 
-            _wrappersCache.TryAdd(objectToWrap, wrapper);
+            wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<Type, object>());
 
-            _wrappersCache.TryGetValue(objectToWrap, out wrapper);
+            wrapperTypes.TryAdd(typeof(T), wrapper);
 
             return (T)wrapper;
         }
 
-        private static ActionQueue GetActionQueueFor(Type typeToWrap)
+        private static ActionQueue GetActionQueueFor(Type typeToWrap, object aggregateKey)
         {
+            if (aggregateKey != null)
+            {
+                if (_queuesCache.TryGetValue(aggregateKey, out var actionQueue))
+                    return actionQueue;
+            }
+
             if (Attribute.GetCustomAttribute(typeToWrap, typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
             {
                 return _queuesCache.AddOrUpdate(serviceDomain.DomainKey, new ActionQueue(), (key, oldValue) => oldValue);
