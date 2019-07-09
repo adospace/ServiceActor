@@ -19,7 +19,7 @@ ServiceActor doesn't aim to be a full Actor model like Akka.Net or Orleans: actu
 - Should be easily adopted in projects that deliver services using a DI frameworks
 - Should be possible to gracefully handle exceptions in services managing custom recover policies (not yet realized)
 
-### Main ServiceActor non-goals
+### ServiceActor non-goals
 - Services should be accessible in the same process memory (not like pure Actors that are instead location unaware)
 
 ### Example of usage
@@ -115,3 +115,6 @@ Running this code you'll find that everything will just work.
 ServiceActor creates at runtime (on the fly) a wrapper for the service interface that implements a message queue for the actual service.
 Calling a method or a property of the wrapper, it actually "enqueue" the call in a queue for the service. Each invocation is than executed one after the other so that is "guaranteed" that only one thread access the method at time.
 For the above simple service ServiceActor enqueue all the calls coming from different threas to the `Increment` method and executes the method one per time.
+
+### Documentation
+Please take a look at https://github.com/adospace/ServiceActor/wiki
