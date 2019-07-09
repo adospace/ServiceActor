@@ -485,5 +485,38 @@ namespace ServiceActor.Tests
             Assert.IsNotNull(service1);
             Assert.IsNotNull(service2);
         }
+
+        public interface ITestActionCallService
+        {
+            int Order { get; }
+            void Method(int order);
+        }
+
+        public class TestActionCallService : ITestActionCallService
+        {
+            public int Order { get; private set; }
+            public void Method(int order)
+            {
+                Assert.AreEqual(Order + 1, order);
+                Order = order;
+            }
+        }
+
+        [TestMethod]
+        public void TestExecutionOfExternaActionInServiceQueue()
+        {
+            var service = new TestActionCallService();
+
+            Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.Call(service, () => service.Method(0)));
+
+            var wrapper = ServiceRef.Create<ITestActionCallService>(service);
+
+            wrapper.Method(1);
+            ServiceRef.Call(wrapper, () => service.Method(2));
+            wrapper.Method(3);
+
+            Assert.AreEqual(3, wrapper.Order);
+        }
+
     }
 }

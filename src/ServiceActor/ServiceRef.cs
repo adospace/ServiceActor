@@ -20,6 +20,13 @@ namespace ServiceActor
 
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
 
+        /// <summary>
+        /// Get or create a synchronization wrapper around <paramref name="objectToWrap"/>
+        /// </summary>
+        /// <typeparam name="T">Type of the interface describing the service to wrap</typeparam>
+        /// <param name="objectToWrap">Actual implementation type of the service</param>
+        /// <param name="aggregateKey">Optional aggregation key to use in place of the <see cref="ServiceDomainAttribute"/> attribute</param>
+        /// <returns>Synchronization wrapper object that implements <typeparamref name="T"/></returns>
         public static T Create<T>(T objectToWrap, object aggregateKey = null) where T : class
         {
             if (objectToWrap == null)
@@ -38,7 +45,7 @@ namespace ServiceActor
 
                 var firstWrapper = wrapperTypes.First().Value;
 
-                actionQueue = (ActionQueue)firstWrapper.GetType().GetField("_actionQueue", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(firstWrapper);
+                actionQueue = ((IActionQueueOwner)firstWrapper).ActionQueue;
             }
 
             actionQueue = actionQueue ?? GetActionQueueFor(typeof(T), aggregateKey);
@@ -59,6 +66,49 @@ namespace ServiceActor
             wrapperTypes.TryAdd(typeof(T), wrapper);
 
             return (T)wrapper;
+        }
+
+        /// <summary>
+        /// Execute <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/>
+        /// </summary>
+        /// <param name="serviceObject">Service implementation or wrapper</param>
+        /// <param name="actionToExecute">Action to execute in the queue of <paramref name="serviceObject"/></param>
+        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
+        public static void Call(object serviceObject, Action actionToExecute, bool createWrapperIfNotExists = false)
+        {
+            if (serviceObject == null)
+            {
+                throw new ArgumentNullException(nameof(serviceObject));
+            }
+
+            if (actionToExecute == null)
+            {
+                throw new ArgumentNullException(nameof(actionToExecute));
+            }
+
+            ActionQueue actionQueue = null;
+
+            if (serviceObject is IActionQueueOwner)
+            {
+                actionQueue = ((IActionQueueOwner)serviceObject).ActionQueue;
+            }
+
+            if (actionQueue == null)
+            {
+                if (_wrappersCache.TryGetValue(serviceObject, out var wrapperTypes))
+                {
+                    var firstWrapper = wrapperTypes.First().Value;
+
+                    actionQueue = ((IActionQueueOwner)firstWrapper).ActionQueue;
+                }
+            }
+
+            if (actionQueue == null)
+            {
+                throw new InvalidOperationException("Unable to get the action queue for the object: create a wrapper for the object with ServiceRef.Create<> first");
+            }
+
+            actionQueue.Enqueue(actionToExecute);
         }
 
         private static ActionQueue GetActionQueueFor(Type typeToWrap, object aggregateKey)

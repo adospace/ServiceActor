@@ -10,15 +10,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
+public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IActionQueueOwner
 {
     private readonly <#= TypeToWrapFullName #> _objectToWrap;
-    private readonly ServiceActor.ActionQueue _actionQueue;
+    public ServiceActor.ActionQueue ActionQueue { get; }
 
     public <#= TypeToWrap.Name #>AsyncActorWrapper(<#= TypeToWrapFullName #> objectToWrap, ServiceActor.ActionQueue actionQueue)
     {
         _objectToWrap = objectToWrap ?? throw new ArgumentNullException(nameof(objectToWrap));
-        _actionQueue = actionQueue ?? throw new ArgumentNullException(nameof(actionQueue));
+        ActionQueue = actionQueue ?? throw new ArgumentNullException(nameof(actionQueue));
     }
 
     <# foreach (var property in GetProperties()) { #>
@@ -36,7 +36,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             <#= property.PropertyType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             Exception exceptionThrown = null;
-            _actionQueue.Enqueue(() =>
+            ActionQueue.Enqueue(() =>
             {
                 try
                 {
@@ -74,7 +74,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 var executedEvent = new AutoResetEvent(false);
                 Exception exceptionThrown = null;
 
-                _actionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(() =>
                 {
                     try
                     {
@@ -95,7 +95,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
                 <# } else { #>
 
-                _actionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(() =>
                 {
                     _objectToWrap.<#= property.Name #> = value;
                 }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
@@ -123,7 +123,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
                 var executedEvent = new AutoResetEvent(false);
                 Exception exceptionThrown = null;
-                _actionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(() =>
                 {
                     try
                     {
@@ -143,7 +143,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
                 <# } else { #>
 
-                _actionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(() =>
                 {
                     _objectToWrap.<#= method.GetMethodInvocationCode() #>;
                 }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
@@ -163,7 +163,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
 
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             Exception exceptionThrown = null;
-            _actionQueue.Enqueue(async () =>
+            ActionQueue.Enqueue(async () =>
             {
                 try
                 {
@@ -196,7 +196,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             <#= method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             Exception exceptionThrown = null;
-            _actionQueue.Enqueue(async () =>
+            ActionQueue.Enqueue(async () =>
             {
                 try
                 {
@@ -230,7 +230,7 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             <#= method.ReturnType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             Exception exceptionThrown = null;
-            _actionQueue.Enqueue(() =>
+            ActionQueue.Enqueue(() =>
             {
                 try
                 {
