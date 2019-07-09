@@ -149,6 +149,8 @@ namespace ServiceActor.Tests
             var serviceRef = ServiceRef.Create<ITestService>(new TestService());
 
             Assert.IsNotNull(serviceRef);
+
+            Assert.AreSame(serviceRef, ServiceRef.Create(serviceRef));
         }
 
         public interface ITestServiceWithRefOutParemeters

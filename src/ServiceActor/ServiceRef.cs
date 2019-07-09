@@ -34,6 +34,16 @@ namespace ServiceActor
                 throw new ArgumentNullException(nameof(objectToWrap));
             }
 
+            if (objectToWrap is IActionQueueOwner)
+            {
+                //objectToWrap is already a wrapper
+                //test if it's the right interface
+                if (objectToWrap is T)
+                    return (T)objectToWrap;
+
+                throw new ArgumentException($"Parameter is already a wrapper but not for interface '{typeof(T)}'", nameof(objectToWrap));
+            }
+
             //NOTE: Do not use AddOrUpdate() to avoid _wrapperCache lock while generating wrapper
 
             ActionQueue actionQueue = null;
