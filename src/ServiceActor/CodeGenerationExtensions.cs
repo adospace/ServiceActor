@@ -64,14 +64,17 @@ namespace ServiceActor
             return $"{methodInfo.Name}<{string.Join(", ", methodInfo.GetGenericArguments().Select(_ => _.GetTypeReferenceCode()))}>({string.Join(", ", methodInfo.GetParameters().Select(_ => _.Name))})";
         }
 
-        public static IEnumerable<MethodInfo> GetFlattenMethods(this Type type)
+        public static IEnumerable<InterfaceMethod> GetFlattenMethods(this Type type)
         {
             if (type == null)
             {
                 throw new ArgumentNullException(nameof(type));
             }
 
-            return type.GetMethods().Concat(type.GetInterfaces().SelectMany(_ => _.GetFlattenMethods())).Distinct();
+            return type.GetMethods()
+                .Select(_ => new InterfaceMethod(type, _))
+                    .Concat(type.GetInterfaces().SelectMany(_ => _.GetFlattenMethods()))
+                    .Distinct();
         }
 
         public static IEnumerable<PropertyInfo> GetFlattenProperties(this Type type)

@@ -408,6 +408,50 @@ namespace ServiceActor.Tests
             Assert.AreEqual(2, private_counter_ref.Count);
         }
 
+        public interface IBlockingActualTypeTestCounter
+        {
+            int Count { get; }
+
+            void NotBlockingIncrement();
+
+            void BlockingIncrement();
+        }
+
+        private class BlockingActualTypeTestCounter : IBlockingActualTypeTestCounter
+        {
+            public int Count { get; private set; }
+
+            [BlockCaller]
+            public void BlockingIncrement()
+            {
+                Count += 1;
+            }
+
+            public void NotBlockingIncrement()
+            {
+                Count += 1;
+            }
+        }
+
+        [TestMethod]
+        public void ServiceActorWithBlockingVoidCallOnActualTypeShouldWorkAsExpected()
+        {
+            //keep a reference to the actual implementation class just to be able to 
+            //read the Count property without pass thru the wrapper
+            var private_counter_ref = new BlockingActualTypeTestCounter();
+            var counter = ServiceRef.Create<IBlockingActualTypeTestCounter>(private_counter_ref);
+
+            counter.NotBlockingIncrement();
+            //as the previous call is not blocking here the count is still 0 
+            Assert.AreEqual(0, private_counter_ref.Count);
+
+            //now perform a blocking call (method marked with [BlockCaller] attribute)
+            counter.BlockingIncrement();
+
+            //here we can be sure that both previous call has been invoked to the actual class
+            Assert.AreEqual(2, private_counter_ref.Count);
+        }
+
         public interface IAsyncCounter
         {
             int Count { get; }

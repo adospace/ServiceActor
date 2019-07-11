@@ -7,9 +7,10 @@ namespace ServiceActor
 {
     public partial class ServiceActorWrapperTemplate
     {
-        public ServiceActorWrapperTemplate(Type typeToWrap)
+        public ServiceActorWrapperTemplate(Type typeToWrap, Type typeOfObjectToWrap)
         {
             TypeToWrap = typeToWrap ?? throw new ArgumentNullException(nameof(typeToWrap));
+            TypeOfObjectToWrap = typeOfObjectToWrap ?? throw new ArgumentNullException(nameof(typeOfObjectToWrap));
 
             if (!TypeToWrap.IsInterface)
             {
@@ -21,13 +22,15 @@ namespace ServiceActor
                 throw new InvalidOperationException("Type to wrap should not contain events");
             }
 
+
             ThrowIfRefOutParametersExistsForMethodsWithoutTheAllowConcurrentAccessAttribute();
 
-            _blockCallerByDefault = BlockCaller(TypeToWrap);
-            _keepAsyncContextByDefault = KeepAsyncContext(TypeToWrap);
+            _blockCallerByDefault = BlockCaller(TypeOfObjectToWrap) || BlockCaller(TypeToWrap);
+            _keepAsyncContextByDefault = KeepAsyncContext(TypeOfObjectToWrap) || KeepAsyncContext(TypeToWrap);
         }
 
         public Type TypeToWrap { get; }
+        public Type TypeOfObjectToWrap { get; }
 
         public string TypeToWrapName => TypeToWrap.Name.Replace('`', '_');
 
@@ -37,9 +40,9 @@ namespace ServiceActor
 
         private readonly bool _keepAsyncContextByDefault = false;
 
-        private IEnumerable<MethodInfo> GetMethods() => TypeToWrap
+        private IEnumerable<InterfaceMethod> GetMethods() => TypeToWrap
             .GetFlattenMethods()
-            .Where(_ => !_.Name.StartsWith("get_") && !_.Name.StartsWith("set_") && !_.Name.StartsWith("add_") && !_.Name.StartsWith("remove_"));
+            .Where(_ => !_.Info.Name.StartsWith("get_") && !_.Info.Name.StartsWith("set_") && !_.Info.Name.StartsWith("add_") && !_.Info.Name.StartsWith("remove_"));
 
         private IEnumerable<PropertyInfo> GetProperties() => TypeToWrap
             .GetFlattenProperties();
@@ -47,15 +50,27 @@ namespace ServiceActor
         private void ThrowIfRefOutParametersExistsForMethodsWithoutTheAllowConcurrentAccessAttribute()
         {
             foreach (var method in GetMethods()
-                .Where(_ => _.GetParameters().Any(p => p.IsOut || p.ParameterType.IsByRef)))
+                .Where(_ => _.Info.GetParameters().Any(p => p.IsOut || p.ParameterType.IsByRef)))
             {
                 if (!MethodAllowsConcurrentAccess(method))
-                    throw new InvalidOperationException($"Method '{method.Name}' of '{TypeToWrapFullName}' contains ref or out parameters but not support concurrent access (MethodAllowsConcurrentAccess attribute)");
+                    throw new InvalidOperationException($"Method '{method.Info.Name}' of '{TypeToWrapFullName}' contains ref or out parameters but not support concurrent access (MethodAllowsConcurrentAccess attribute)");
             }
+        }
+
+        private MethodInfo GetActualTypeMappedMethod(InterfaceMethod method)
+        {
+            var interfaceMapping = TypeOfObjectToWrap.GetInterfaceMap(method.InterfaceType);
+            return interfaceMapping.TargetMethods[
+                Array.IndexOf(interfaceMapping.InterfaceMethods, method.Info)];
         }
 
         private bool PropertyGetAllowsConcurrentAccess(PropertyInfo propertyInfo)
         {
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
+            {
+                return concurrentAccessAttributeOfActualType.PropertyGet;
+            }
+
             if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
             {
                 return concurrentAccessAttribute.PropertyGet;
@@ -66,6 +81,11 @@ namespace ServiceActor
 
         private bool PropertySetAllowsConcurrentAccess(PropertyInfo propertyInfo)
         {
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
+            {
+                return concurrentAccessAttributeOfActualType.PropertySet;
+            }
+
             if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
             {
                 return concurrentAccessAttribute.PropertySet;
@@ -74,9 +94,14 @@ namespace ServiceActor
             return false;
         }
 
-        private bool MethodAllowsConcurrentAccess(MethodInfo methodInfo)
+        private bool MethodAllowsConcurrentAccess(InterfaceMethod method)
         {
-            if (Attribute.GetCustomAttribute(methodInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
+            if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
+            {
+                return true;
+            }
+
+            if (Attribute.GetCustomAttribute(method.Info, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
             {
                 return true;
             }
@@ -96,6 +121,11 @@ namespace ServiceActor
 
         private bool BlockCaller(PropertyInfo propertyInfo)
         {
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            {
+                return true;
+            }
+
             if (Attribute.GetCustomAttribute(propertyInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
             {
                 return true;
@@ -104,9 +134,14 @@ namespace ServiceActor
             return _blockCallerByDefault;
         }
 
-        private bool BlockCaller(MethodInfo methodInfo)
+        private bool BlockCaller(InterfaceMethod method)
         {
-            if (Attribute.GetCustomAttribute(methodInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            {
+                return true;
+            }
+
+            if (Attribute.GetCustomAttribute(method.Info, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
             {
                 return true;
             }
@@ -126,6 +161,11 @@ namespace ServiceActor
 
         private bool KeepAsyncContext(PropertyInfo propertyInfo)
         {
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
+            {
+                return keepAsyncContextAttributeOfActualType.KeepContext;
+            }
+
             if (Attribute.GetCustomAttribute(propertyInfo, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
             {
                 return keepAsyncContextAttribute.KeepContext;
@@ -134,9 +174,14 @@ namespace ServiceActor
             return _keepAsyncContextByDefault;
         }
 
-        private bool KeepAsyncContext(MethodInfo methodInfo)
+        private bool KeepAsyncContext(InterfaceMethod method)
         {
-            if (Attribute.GetCustomAttribute(methodInfo, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
+            if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
+            {
+                return keepAsyncContextAttributeOfActualType.KeepContext;
+            }
+
+            if (Attribute.GetCustomAttribute(method.Info, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
             {
                 return keepAsyncContextAttribute.KeepContext;
             }

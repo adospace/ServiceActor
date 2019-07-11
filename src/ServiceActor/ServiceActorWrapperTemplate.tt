@@ -134,12 +134,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
     <# foreach (var method in GetMethods()) { #>
     
-        <# if (method.ReturnType == typeof(void)) { #>
-        public <#= method.GetMethodDeclarationCode() #>
+        <# if (method.Info.ReturnType == typeof(void)) { #>
+        public <#= method.Info.GetMethodDeclarationCode() #>
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+            _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
 
             if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
             {
@@ -156,7 +156,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 {
                     try
                     {
-                        _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                        _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                     }
                     catch (Exception ex)
                     {
@@ -179,7 +179,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 ActionQueue.Enqueue(() =>
                 {
-                    _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                     
                     if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
                     {
@@ -192,12 +192,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             <# } #>
         }
-        <# } else if (method.ReturnType == typeof(Task)) { #>
-        public async <#= method.GetMethodDeclarationCode() #>
+        <# } else if (method.Info.ReturnType == typeof(Task)) { #>
+        public async <#= method.Info.GetMethodDeclarationCode() #>
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+            await _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
 
             if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
             {
@@ -212,7 +212,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             {
                 try
                 {
-                    await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    await _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                 }
                 catch (Exception ex)
                 {
@@ -234,12 +234,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <# } #>
 
         }
-        <# } else if (method.ReturnType.BaseType == typeof(Task)) { #>
-        public async <#= method.GetMethodDeclarationCode() #>
+        <# } else if (method.Info.ReturnType.BaseType == typeof(Task)) { #>
+        public async <#= method.Info.GetMethodDeclarationCode() #>
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            var res = await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+            var res = await _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
             
             if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
             {
@@ -250,14 +250,14 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             <# } else { #>
 
-            <#= method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
+            <#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             Exception exceptionThrown = null;
             ActionQueue.Enqueue(async () =>
             {
                 try
                 {
-                    res = await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    res = await _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                 }
                 catch (Exception ex)
                 {
@@ -274,7 +274,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
             {
                 pendingOperation.WaitForCompletion();
-                res = await ((IPendingOperation<Task<<#= method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>>>)pendingOperation)
+                res = await ((IPendingOperation<Task<<#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>>>)pendingOperation)
                     .GetResultFunction()
                     .Invoke();
             }
@@ -284,11 +284,11 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <# } #>
         }
         <# } else { #>
-        public <#= method.GetMethodDeclarationCode() #>
+        public <#= method.Info.GetMethodDeclarationCode() #>
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            var res = _objectToWrap.<#= method.GetMethodInvocationCode() #>
+            var res = _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>
             
             if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
             {
@@ -298,14 +298,14 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             return res;
             <# } else { #>
 
-            <#= method.ReturnType.GetTypeReferenceCode() #> res = default;
+            <#= method.Info.ReturnType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             Exception exceptionThrown = null;
             ActionQueue.Enqueue(() =>
             {
                 try
                 {
-                    res = _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    res = _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                 }
                 catch (Exception ex)
                 {
@@ -322,7 +322,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
             {
                 pendingOperation.WaitForCompletion();
-                res = ((IPendingOperation<<#= method.ReturnType.GetTypeReferenceCode() #>>)pendingOperation)
+                res = ((IPendingOperation<<#= method.Info.ReturnType.GetTypeReferenceCode() #>>)pendingOperation)
                     .GetResultFunction()
                     .Invoke();
             }

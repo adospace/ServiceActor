@@ -9,22 +9,26 @@ namespace ServiceActor
     {
         private readonly WaitHandle _waitHandler;
         private readonly int _timeoutMilliseconds;
+        private readonly Action<bool> _actionAfterCompletion;
 
-        public WaitHandlerPendingOperation(WaitHandle waitHandler, int timeoutMilliseconds = 0)
+        public WaitHandlerPendingOperation(
+            WaitHandle waitHandler, 
+            int timeoutMilliseconds = 0,
+            Action<bool> actionAfterCompletion = null)
         {
             _waitHandler = waitHandler ?? throw new ArgumentNullException(nameof(waitHandler));
             _timeoutMilliseconds = timeoutMilliseconds;
+            _actionAfterCompletion = actionAfterCompletion;
         }
+
 
         public void WaitForCompletion()
         {
-            if (_timeoutMilliseconds > 0)
-            {
-                _waitHandler.WaitOne(_timeoutMilliseconds);
-                return;
-            }
+            var completed = _timeoutMilliseconds > 0 ? 
+                    _waitHandler.WaitOne(_timeoutMilliseconds) :
+                    _waitHandler.WaitOne();
 
-            _waitHandler.WaitOne();
+            _actionAfterCompletion?.Invoke(completed);
         }
     }
 
@@ -32,8 +36,12 @@ namespace ServiceActor
     {
         private readonly Func<T> _getResultFunction;
 
-        public WaitHandlerPendingOperation(WaitHandle waitHandler, Func<T> getResultFunction, int timeoutMilliseconds = 0)
-            :base(waitHandler, timeoutMilliseconds)
+        public WaitHandlerPendingOperation(
+            WaitHandle waitHandler, 
+            Func<T> getResultFunction, 
+            int timeoutMilliseconds = 0,
+            Action<bool> actionAfterCompletion = null)
+            :base(waitHandler, timeoutMilliseconds, actionAfterCompletion)
         {
             _getResultFunction = getResultFunction ?? throw new ArgumentNullException(nameof(getResultFunction));
         }

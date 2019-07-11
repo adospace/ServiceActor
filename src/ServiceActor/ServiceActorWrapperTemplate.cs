@@ -327,14 +327,14 @@ namespace ServiceActor
             this.Write("    \r\n        ");
             
             #line 137 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- if (method.ReturnType == typeof(void)) { 
+ if (method.Info.ReturnType == typeof(void)) { 
             
             #line default
             #line hidden
             this.Write("        public ");
             
             #line 138 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
@@ -348,7 +348,7 @@ namespace ServiceActor
             this.Write("\r\n            _objectToWrap.");
             
             #line 142 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -383,7 +383,7 @@ namespace ServiceActor
                         _objectToWrap.");
             
             #line 159 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -419,7 +419,7 @@ namespace ServiceActor
                     "   _objectToWrap.");
             
             #line 182 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -454,14 +454,14 @@ namespace ServiceActor
             this.Write("        }\r\n        ");
             
             #line 195 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- } else if (method.ReturnType == typeof(Task)) { 
+ } else if (method.Info.ReturnType == typeof(Task)) { 
             
             #line default
             #line hidden
             this.Write("        public async ");
             
             #line 196 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
@@ -475,7 +475,7 @@ namespace ServiceActor
             this.Write("\r\n            await _objectToWrap.");
             
             #line 200 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -503,7 +503,7 @@ namespace ServiceActor
                     await _objectToWrap.");
             
             #line 215 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -538,14 +538,14 @@ namespace ServiceActor
             this.Write("\r\n        }\r\n        ");
             
             #line 237 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- } else if (method.ReturnType.BaseType == typeof(Task)) { 
+ } else if (method.Info.ReturnType.BaseType == typeof(Task)) { 
             
             #line default
             #line hidden
             this.Write("        public async ");
             
             #line 238 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
@@ -559,7 +559,7 @@ namespace ServiceActor
             this.Write("\r\n            var res = await _objectToWrap.");
             
             #line 242 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -582,7 +582,7 @@ namespace ServiceActor
             this.Write("\r\n            ");
             
             #line 253 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
             
             #line default
             #line hidden
@@ -596,7 +596,7 @@ namespace ServiceActor
                     res = await _objectToWrap.");
             
             #line 260 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -622,7 +622,7 @@ namespace ServiceActor
                 res = await ((IPendingOperation<Task<");
             
             #line 277 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
             
             #line default
             #line hidden
@@ -644,7 +644,7 @@ namespace ServiceActor
             this.Write("        public ");
             
             #line 287 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodDeclarationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
@@ -658,7 +658,7 @@ namespace ServiceActor
             this.Write("\r\n            var res = _objectToWrap.");
             
             #line 291 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -680,7 +680,7 @@ namespace ServiceActor
             this.Write("\r\n            ");
             
             #line 301 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.ReturnType.GetTypeReferenceCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetTypeReferenceCode()));
             
             #line default
             #line hidden
@@ -694,7 +694,7 @@ namespace ServiceActor
                     res = _objectToWrap.");
             
             #line 308 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.GetMethodInvocationCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
@@ -720,7 +720,7 @@ namespace ServiceActor
                 res = ((IPendingOperation<");
             
             #line 325 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(method.ReturnType.GetTypeReferenceCode()));
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetTypeReferenceCode()));
             
             #line default
             #line hidden

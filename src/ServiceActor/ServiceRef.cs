@@ -61,7 +61,7 @@ namespace ServiceActor
 
             actionQueue = actionQueue ?? GetActionQueueFor(typeof(T), aggregateKey);
 
-            var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T)).TransformText();
+            var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), objectToWrap.GetType()).TransformText();
             //Console.WriteLine(asyncActorCode);
             wrapper = CSharpScript.EvaluateAsync<T>(
                 asyncActorCode,
@@ -142,24 +142,24 @@ namespace ServiceActor
             }
         }
 
-        public static void RegisterPendingOperation(object objectWrapped, WaitHandle waitHandle, int timeoutMilliseconds = 0)
+        public static void RegisterPendingOperation(object objectWrapped, WaitHandle waitHandle, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
             if (objectWrapped == null)
             {
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(waitHandle, timeoutMilliseconds));
+            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(waitHandle, timeoutMilliseconds, actionOnCompletion));
         }
 
-        public static void RegisterPendingOperation<T>(object objectWrapped, WaitHandle waitHandle, Func<T> getResultFunction, int timeoutMilliseconds = 0)
+        public static void RegisterPendingOperation<T>(object objectWrapped, WaitHandle waitHandle, Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
             if (objectWrapped == null)
             {
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds));
+            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds, actionOnCompletion));
         }
 
         public static bool TryGetPendingOperation(object objectWrapped, out IPendingOperation pendingOperation)
