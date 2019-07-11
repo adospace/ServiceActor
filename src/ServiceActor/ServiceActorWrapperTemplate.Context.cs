@@ -18,13 +18,13 @@ namespace ServiceActor
 
             if (TypeToWrap.GetEvents().Any())
             {
-                throw new InvalidOperationException("Typet to wrap should not contain events");
+                throw new InvalidOperationException("Type to wrap should not contain events");
             }
 
             ThrowIfRefOutParametersExistsForMethodsWithoutTheAllowConcurrentAccessAttribute();
 
             _blockCallerByDefault = BlockCaller(TypeToWrap);
-            _keepAsyncContextDefault = KeepAsyncContext(TypeToWrap);
+            _keepAsyncContextByDefault = KeepAsyncContext(TypeToWrap);
         }
 
         public Type TypeToWrap { get; }
@@ -33,7 +33,7 @@ namespace ServiceActor
 
         private readonly bool _blockCallerByDefault = false;
 
-        private readonly bool _keepAsyncContextDefault = false;
+        private readonly bool _keepAsyncContextByDefault = false;
 
         private IEnumerable<MethodInfo> GetMethods() => TypeToWrap
             .GetFlattenMethods()
@@ -129,7 +129,7 @@ namespace ServiceActor
                 return keepAsyncContextAttribute.KeepContext;
             }
 
-            return _keepAsyncContextDefault;
+            return _keepAsyncContextByDefault;
         }
 
         private bool KeepAsyncContext(MethodInfo methodInfo)
@@ -139,7 +139,7 @@ namespace ServiceActor
                 return keepAsyncContextAttribute.KeepContext;
             }
 
-            return _keepAsyncContextDefault;
+            return _keepAsyncContextByDefault;
         }
     }
 }

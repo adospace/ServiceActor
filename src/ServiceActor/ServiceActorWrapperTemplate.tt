@@ -9,11 +9,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ServiceActor;
 
 public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IActionQueueOwner
 {
     private readonly <#= TypeToWrapFullName #> _objectToWrap;
-    public ServiceActor.ActionQueue ActionQueue { get; }
+    public ActionQueue ActionQueue { get; }
 
     public <#= TypeToWrap.Name #>AsyncActorWrapper(<#= TypeToWrapFullName #> objectToWrap, ServiceActor.ActionQueue actionQueue)
     {
@@ -55,6 +56,14 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                pendingOperation.WaitForCompletion();
+                res = ((IPendingOperation<<#= property.PropertyType.GetTypeReferenceCode() #>>)pendingOperation)
+                    .GetResultFunction()
+                    .Invoke();
+            }
+
             return res;
 
             <# } #>
@@ -66,6 +75,11 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             <# if (PropertySetAllowsConcurrentAccess(property)) { #>
 
             _objectToWrap.<#= property.Name #> = value;
+
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                throw new InvalidOperationException("Pending operations are not supported for pure set properties: use BlockCaller attribute instead");
+            }
 
             <# } else { #>
 
@@ -93,11 +107,21 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 if (exceptionThrown != null)
                     throw exceptionThrown;
 
+                if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+                {
+                    pendingOperation.WaitForCompletion();
+                }
+
                 <# } else { #>
 
                 ActionQueue.Enqueue(() =>
                 {
                     _objectToWrap.<#= property.Name #> = value;
+                    if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+                    {
+                        throw new InvalidOperationException("Pending operations are not supported for pure set properties: use BlockCaller attribute instead");
+                    }
+
                 }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
 
                 <# } #>
@@ -116,6 +140,11 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
             _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                throw new InvalidOperationException("Pending operations are not supported for pure void methods: use BlockCaller attribute instead");
+            }
 
             <# } else { #>
 
@@ -136,16 +165,27 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                     executedEvent.Set();
                 }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
+                executedEvent.WaitOne();
+
                 if (exceptionThrown != null)
                     throw exceptionThrown;
 
-                executedEvent.WaitOne();
+                if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+                {
+                    pendingOperation.WaitForCompletion();
+                }
 
                 <# } else { #>
 
                 ActionQueue.Enqueue(() =>
                 {
                     _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+                    
+                    if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+                    {
+                        throw new InvalidOperationException("Pending operations are not supported for pure void methods: use the BlockCaller attribute instead");
+                    }
+
                 }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
                 <# } #>
@@ -153,11 +193,16 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             <# } #>
         }
         <# } else if (method.ReturnType == typeof(Task)) { #>
-        public <#= method.GetMethodDeclarationCode() #>
+        public async <#= method.GetMethodDeclarationCode() #>
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            return _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+            await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                throw new InvalidOperationException("Pending operations are not supported for pure Task methods: use the BlockCaller attribute instead");
+            }
 
             <# } else { #>
 
@@ -176,10 +221,15 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 executedEvent.Set();
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
+            await executedEvent.WaitAsync();
+
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            return executedEvent.WaitAsync();
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                pendingOperation.WaitForCompletion();
+            }
 
             <# } #>
 
@@ -189,7 +239,14 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            return await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+            var res = await _objectToWrap.<#= method.GetMethodInvocationCode() #>;
+            
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                throw new InvalidOperationException("Pending operations are not supported for pure Task methods: use the BlockCaller attribute instead");
+            }
+
+            return res;
 
             <# } else { #>
 
@@ -214,6 +271,14 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                pendingOperation.WaitForCompletion();
+                res = await ((IPendingOperation<Task<<#= method.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>>>)pendingOperation)
+                    .GetResultFunction()
+                    .Invoke();
+            }
+
             return res;
 
             <# } #>
@@ -223,8 +288,14 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            return _objectToWrap.<#= method.GetMethodInvocationCode() #>
+            var res = _objectToWrap.<#= method.GetMethodInvocationCode() #>
+            
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                throw new InvalidOperationException("Pending operations are not supported for pure methods: use the BlockCaller attribute instead");
+            }
 
+            return res;
             <# } else { #>
 
             <#= method.ReturnType.GetTypeReferenceCode() #> res = default;
@@ -242,9 +313,20 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
                 }
                 executedEvent.Set();
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
+
             executedEvent.WaitOne();
+
             if (exceptionThrown != null)
                 throw exceptionThrown;
+
+            if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
+            {
+                pendingOperation.WaitForCompletion();
+                res = ((IPendingOperation<<#= method.ReturnType.GetTypeReferenceCode() #>>)pendingOperation)
+                    .GetResultFunction()
+                    .Invoke();
+            }
+
             return res;
 
             <# } #>

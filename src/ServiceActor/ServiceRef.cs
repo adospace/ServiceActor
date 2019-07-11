@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 
 namespace ServiceActor
 {
@@ -119,6 +120,56 @@ namespace ServiceActor
             }
 
             actionQueue.Enqueue(actionToExecute);
+        }
+
+        private static readonly ConcurrentDictionary<object, IPendingOperation> _pendingOperations = new ConcurrentDictionary<object, IPendingOperation>();
+
+        public static void RegisterPendingOperation(object objectWrapped, IPendingOperation pendingOperation)
+        {
+            if (objectWrapped == null)
+            {
+                throw new ArgumentNullException(nameof(objectWrapped));
+            }
+
+            if (pendingOperation == null)
+            {
+                throw new ArgumentNullException(nameof(pendingOperation));
+            }
+
+            if (!_pendingOperations.TryAdd(objectWrapped, pendingOperation))
+            {
+                throw new InvalidOperationException($"Pending operation already registerd for object '{objectWrapped}'");
+            }
+        }
+
+        public static void RegisterPendingOperation(object objectWrapped, WaitHandle waitHandle)
+        {
+            if (objectWrapped == null)
+            {
+                throw new ArgumentNullException(nameof(objectWrapped));
+            }
+
+            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(waitHandle));
+        }
+
+        public static void RegisterPendingOperation<T>(object objectWrapped, WaitHandle waitHandle, Func<T> getResultFunction)
+        {
+            if (objectWrapped == null)
+            {
+                throw new ArgumentNullException(nameof(objectWrapped));
+            }
+
+            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation<T>(waitHandle, getResultFunction));
+        }
+
+        public static bool TryGetPendingOperation(object objectWrapped, out IPendingOperation pendingOperation)
+        {
+            if (objectWrapped == null)
+            {
+                throw new ArgumentNullException(nameof(objectWrapped));
+            }
+
+            return _pendingOperations.TryRemove(objectWrapped, out pendingOperation);
         }
 
         private static ActionQueue GetActionQueueFor(Type typeToWrap, object aggregateKey)

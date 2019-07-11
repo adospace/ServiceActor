@@ -520,5 +520,102 @@ namespace ServiceActor.Tests
             Assert.AreEqual(3, wrapper.Order);
         }
 
+
+        public interface IPendingOpsService
+        {
+            bool OperationCompleted { get; }
+
+            [BlockCaller]
+            void BeginOperation();
+
+            void CompleteOperation();
+        }
+
+        class PendingOpsService : IPendingOpsService
+        {
+            public bool OperationCompleted { get; private set; }
+
+            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
+            public void BeginOperation()
+            {
+                ServiceRef.RegisterPendingOperation(this, _completedEvent);
+
+                Task.Factory.StartNew(() =>
+                {
+                    //simulate some work
+                    Task.Delay(1000).Wait();
+                    ServiceRef.Create<IPendingOpsService>(this)
+                        .CompleteOperation();
+                });
+            }
+
+            public void CompleteOperation()
+            {
+                OperationCompleted = true;
+                _completedEvent.Set();
+            }
+        }
+
+        [TestMethod]
+        public void TestPendingOperations()
+        {
+            var pendingOpsTestService = ServiceRef.Create<IPendingOpsService>(new PendingOpsService());
+
+            Assert.IsFalse(pendingOpsTestService.OperationCompleted);
+            
+            pendingOpsTestService.BeginOperation();
+
+            Assert.IsTrue(pendingOpsTestService.OperationCompleted);
+        }
+
+
+        public interface IPendingOpsServiceAsync
+        {
+            bool OperationCompleted { get; }
+
+            Task<bool> BeginOperationAsync();
+
+            Task CompleteOperationAsync();
+        }
+
+        class PendingOpsServiceAsync : IPendingOpsServiceAsync
+        {
+            public bool OperationCompleted { get; private set; }
+
+            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
+            public Task<bool> BeginOperationAsync()
+            {
+                ServiceRef.RegisterPendingOperation(this, _completedEvent, () => Task.FromResult(OperationCompleted));
+
+                Task.Factory.StartNew(async () =>
+                {
+                    //simulate some work
+                    await Task.Delay(1000);
+                    await ServiceRef.Create<IPendingOpsServiceAsync>(this)
+                        .CompleteOperationAsync();
+                });
+
+                return Task.FromResult(false);
+            }
+
+            public Task CompleteOperationAsync()
+            {
+                OperationCompleted = true;
+                _completedEvent.Set();
+                return Task.CompletedTask;
+            }
+        }
+
+        [TestMethod]
+        public async Task TestPendingOperationsAsyncVersion()
+        {
+            var pendingOpsTestService = ServiceRef.Create<IPendingOpsServiceAsync>(new PendingOpsServiceAsync());
+
+            Assert.IsFalse(pendingOpsTestService.OperationCompleted);
+
+            await pendingOpsTestService.BeginOperationAsync();
+
+            Assert.IsTrue(pendingOpsTestService.OperationCompleted);
+        }
     }
 }

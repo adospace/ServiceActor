@@ -10,7 +10,7 @@ namespace ServiceActor
     {
         private readonly ActionBlock<InvocationItem> _actionQueue;
         private int? _executingActionThreadId;
-        private readonly ConcurrentDictionary<object, object> _targets = new ConcurrentDictionary<object, object>();
+        //private readonly ConcurrentDictionary<object, object> _targets = new ConcurrentDictionary<object, object>();
         private InvocationItem _executingInvocationItem;
 
         private class InvocationItem
