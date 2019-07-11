@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -74,13 +75,41 @@ namespace ServiceActor
             return (T)wrapper;
         }
 
-        private readonly static ConcurrentDictionary<Type, Script> _scriptCache = new ConcurrentDictionary<Type, Script>();
+        private class ScriptTypeKey
+        {
+            private readonly Type _interfaceType;
+            private readonly Type _implType;
+
+            public ScriptTypeKey(Type @interfaceType, Type implType)
+            {
+                _interfaceType = interfaceType;
+                _implType = implType;
+            }
+
+            public override bool Equals(object obj)
+            {
+                var key = obj as ScriptTypeKey;
+                return key != null &&
+                       EqualityComparer<Type>.Default.Equals(_interfaceType, key._interfaceType) &&
+                       EqualityComparer<Type>.Default.Equals(_implType, key._implType);
+            }
+
+            public override int GetHashCode()
+            {
+                var hashCode = -20423575;
+                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_interfaceType);
+                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_implType);
+                return hashCode;
+            }
+        }
+
+        private readonly static ConcurrentDictionary<ScriptTypeKey, Script> _scriptCache = new ConcurrentDictionary<ScriptTypeKey, Script>();
 
         private static Script<T> GetOrCreateScript<T>(Type implType)
         {
             var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), implType).TransformText();
             //Console.WriteLine(asyncActorCode);
-            var script = _scriptCache.GetOrAdd(typeof(T), CSharpScript.Create<T>(
+            var script = _scriptCache.GetOrAdd(new ScriptTypeKey(typeof(T), implType), CSharpScript.Create<T>(
                 asyncActorCode,
                 options: ScriptOptions.Default.AddReferences(
                     Assembly.GetExecutingAssembly(),
