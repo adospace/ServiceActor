@@ -142,24 +142,24 @@ namespace ServiceActor
             }
         }
 
-        public static void RegisterPendingOperation(object objectWrapped, WaitHandle waitHandle)
+        public static void RegisterPendingOperation(object objectWrapped, WaitHandle waitHandle, int timeoutMilliseconds = 0)
         {
             if (objectWrapped == null)
             {
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(waitHandle));
+            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(waitHandle, timeoutMilliseconds));
         }
 
-        public static void RegisterPendingOperation<T>(object objectWrapped, WaitHandle waitHandle, Func<T> getResultFunction)
+        public static void RegisterPendingOperation<T>(object objectWrapped, WaitHandle waitHandle, Func<T> getResultFunction, int timeoutMilliseconds = 0)
         {
             if (objectWrapped == null)
             {
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation<T>(waitHandle, getResultFunction));
+            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds));
         }
 
         public static bool TryGetPendingOperation(object objectWrapped, out IPendingOperation pendingOperation)

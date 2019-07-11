@@ -568,6 +568,67 @@ namespace ServiceActor.Tests
             Assert.IsTrue(pendingOpsTestService.OperationCompleted);
         }
 
+        public interface IPendingOpsService<T>
+        {
+            T Result { get; }
+
+            bool OperationCompleted { get; }
+
+            T BeginOperation();
+
+            void CompleteOperation(T result);
+        }
+
+        class PendingOpsService<T> : IPendingOpsService<T>
+        {
+            public PendingOpsService(T completedResult)
+            {
+                _completedResult = completedResult;
+            }
+
+            public bool OperationCompleted { get; private set; }
+
+            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
+            public T Result { get; private set; } = default(T);
+            private readonly T _completedResult;
+
+            public T BeginOperation()
+            {
+                ServiceRef.RegisterPendingOperation(this, _completedEvent, () => Result);
+
+                Task.Factory.StartNew(() =>
+                {
+                    //simulate some work
+                    Task.Delay(1000).Wait();
+                    ServiceRef.Create<IPendingOpsService<T>>(this)
+                        .CompleteOperation(_completedResult);
+                });
+
+                return default(T);
+            }
+
+            public void CompleteOperation(T result)
+            {
+                Result = result;
+                OperationCompleted = true;
+                _completedEvent.Set();
+            }
+        }
+
+        [TestMethod]
+        public void TestPendingOperationsT()
+        {
+            var pendingOpsTestService = ServiceRef.Create<IPendingOpsService<string>>(new PendingOpsService<string>("DONE"));
+
+            Assert.IsFalse(pendingOpsTestService.OperationCompleted);
+            Assert.IsNull(pendingOpsTestService.Result);
+
+            pendingOpsTestService.BeginOperation();
+
+            Assert.IsTrue(pendingOpsTestService.OperationCompleted);
+            Assert.AreEqual("DONE", pendingOpsTestService.Result);
+        }
+
 
         public interface IPendingOpsServiceAsync
         {

@@ -29,6 +29,8 @@ namespace ServiceActor
 
         public Type TypeToWrap { get; }
 
+        public string TypeToWrapName => TypeToWrap.Name.Replace('`', '_');
+
         private string TypeToWrapFullName => TypeToWrap.GetTypeReferenceCode();
 
         private readonly bool _blockCallerByDefault = false;

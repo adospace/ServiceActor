@@ -11,12 +11,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using ServiceActor;
 
-public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IActionQueueOwner
+public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IActionQueueOwner
 {
     private readonly <#= TypeToWrapFullName #> _objectToWrap;
     public ActionQueue ActionQueue { get; }
 
-    public <#= TypeToWrap.Name #>AsyncActorWrapper(<#= TypeToWrapFullName #> objectToWrap, ServiceActor.ActionQueue actionQueue)
+    public <#= TypeToWrapName #>AsyncActorWrapper(<#= TypeToWrapFullName #> objectToWrap, ServiceActor.ActionQueue actionQueue)
     {
         _objectToWrap = objectToWrap ?? throw new ArgumentNullException(nameof(objectToWrap));
         ActionQueue = actionQueue ?? throw new ArgumentNullException(nameof(actionQueue));
@@ -338,4 +338,4 @@ public class <#= TypeToWrap.Name #>AsyncActorWrapper : <#= TypeToWrapFullName #>
     
 }
 
-return new <#= TypeToWrap.Name #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, ActionQueueToShare);
+return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, ActionQueueToShare);

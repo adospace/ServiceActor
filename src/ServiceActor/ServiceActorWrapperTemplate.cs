@@ -34,7 +34,7 @@ namespace ServiceActor
                     "g.Tasks;\r\nusing ServiceActor;\r\n\r\npublic class ");
             
             #line 14 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrap.Name));
+            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapName));
             
             #line default
             #line hidden
@@ -55,7 +55,7 @@ namespace ServiceActor
             this.Write(" _objectToWrap;\r\n    public ActionQueue ActionQueue { get; }\r\n\r\n    public ");
             
             #line 19 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrap.Name));
+            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapName));
             
             #line default
             #line hidden
@@ -749,7 +749,7 @@ namespace ServiceActor
             this.Write("    \r\n}\r\n\r\nreturn new ");
             
             #line 341 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrap.Name));
+            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapName));
             
             #line default
             #line hidden
