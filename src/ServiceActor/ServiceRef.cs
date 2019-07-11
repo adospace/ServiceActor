@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Scripting;
+﻿using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Concurrent;
@@ -61,22 +62,45 @@ namespace ServiceActor
 
             actionQueue = actionQueue ?? GetActionQueueFor(typeof(T), aggregateKey);
 
-            var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), objectToWrap.GetType()).TransformText();
+            //var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), objectToWrap.GetType()).TransformText();
             //Console.WriteLine(asyncActorCode);
-            wrapper = CSharpScript.EvaluateAsync<T>(
-                asyncActorCode,
-                options: ScriptOptions.Default.AddReferences(
-                    Assembly.GetExecutingAssembly(),
-                    typeof(T).Assembly,
-                    typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-                globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }
-                ).Result;
 
+            //wrapper = CSharpScript.EvaluateAsync<T>(
+            //    asyncActorCode,
+            //    options: ScriptOptions.Default.AddReferences(
+            //        Assembly.GetExecutingAssembly(),
+            //        typeof(T).Assembly,
+            //        typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
+            //    globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }
+            //    ).Result;
+            var script = GetOrCreateScript<T>(objectToWrap.GetType());
+
+            var scriptState = script.RunAsync(new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }).Result;
+
+            wrapper = scriptState.ReturnValue;
             wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<Type, object>());
 
             wrapperTypes.TryAdd(typeof(T), wrapper);
 
             return (T)wrapper;
+        }
+
+        private readonly static ConcurrentDictionary<Type, Script> _scriptCache = new ConcurrentDictionary<Type, Script>();
+
+        private static Script<T> GetOrCreateScript<T>(Type implType)
+        {
+            var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), implType).TransformText();
+            var script = _scriptCache.GetOrAdd(typeof(T), CSharpScript.Create<T>(
+                asyncActorCode,
+                options: ScriptOptions.Default.AddReferences(
+                    Assembly.GetExecutingAssembly(),
+                    typeof(T).Assembly,
+                    typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
+                globalsType: typeof(ScriptGlobals)
+                //globals: new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }
+                ));
+
+            return (Script<T>)script;
         }
 
         /// <summary>
