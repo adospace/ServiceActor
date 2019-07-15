@@ -21,7 +21,6 @@ namespace ServiceActor
             _actionAfterCompletion = actionAfterCompletion;
         }
 
-
         public void WaitForCompletion()
         {
             var completed = _timeoutMilliseconds > 0 ? 
@@ -32,11 +31,11 @@ namespace ServiceActor
         }
     }
 
-    public class WaitHandlerPendingOperation<T> : WaitHandlerPendingOperation, IPendingOperation<T>
+    public class WaitHandlePendingOperation<T> : WaitHandlerPendingOperation, IPendingOperationWithResult
     {
         private readonly Func<T> _getResultFunction;
 
-        public WaitHandlerPendingOperation(
+        public WaitHandlePendingOperation(
             WaitHandle waitHandler, 
             Func<T> getResultFunction, 
             int timeoutMilliseconds = 0,
@@ -46,6 +45,9 @@ namespace ServiceActor
             _getResultFunction = getResultFunction ?? throw new ArgumentNullException(nameof(getResultFunction));
         }
 
-        public Func<T> GetResultFunction() => _getResultFunction;
+        public object GetResult()
+        {
+            return _getResultFunction.Invoke();
+        }
     }
 }

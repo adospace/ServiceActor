@@ -7,10 +7,11 @@ namespace ServiceActor
     public interface IPendingOperation
     {
         void WaitForCompletion();
+
     }
 
-    public interface IPendingOperation<T> : IPendingOperation
+    public interface IPendingOperationWithResult : IPendingOperation
     {
-        Func<T> GetResultFunction();
+        object GetResult();
     }
 }

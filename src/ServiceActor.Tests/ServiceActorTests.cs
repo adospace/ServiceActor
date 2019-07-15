@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace ServiceActor.Tests
 {
     [TestClass]
-    public class ServiceActorTests
+    public partial class ServiceActorTests
     {
         public interface ITestService
         {
@@ -564,163 +564,21 @@ namespace ServiceActor.Tests
             Assert.AreEqual(3, wrapper.Order);
         }
 
-
-        public interface IPendingOpsService
-        {
-            bool OperationCompleted { get; }
-
-            [BlockCaller]
-            void BeginOperation();
-
-            void CompleteOperation();
-        }
-
-        class PendingOpsService : IPendingOpsService
-        {
-            public bool OperationCompleted { get; private set; }
-
-            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
-            public void BeginOperation()
-            {
-                ServiceRef.RegisterPendingOperation(this, _completedEvent);
-
-                Task.Factory.StartNew(() =>
-                {
-                    //simulate some work
-                    Task.Delay(1000).Wait();
-                    ServiceRef.Create<IPendingOpsService>(this)
-                        .CompleteOperation();
-                });
-            }
-
-            public void CompleteOperation()
-            {
-                OperationCompleted = true;
-                _completedEvent.Set();
-            }
-        }
-
         [TestMethod]
-        public void TestPendingOperations()
+        public void TestCallsMonitor()
         {
-            var pendingOpsTestService = ServiceRef.Create<IPendingOpsService>(new PendingOpsService());
+            var callTracer = new SimpleCallMonitorTracer();
+            ActionQueue.BeginMonitor(callTracer);
 
-            Assert.IsFalse(pendingOpsTestService.OperationCompleted);
-            
-            pendingOpsTestService.BeginOperation();
-
-            Assert.IsTrue(pendingOpsTestService.OperationCompleted);
-        }
-
-        public interface IPendingOpsService<T>
-        {
-            T Result { get; }
-
-            bool OperationCompleted { get; }
-
-            T BeginOperation();
-
-            void CompleteOperation(T result);
-        }
-
-        class PendingOpsService<T> : IPendingOpsService<T>
-        {
-            public PendingOpsService(T completedResult)
+            try
             {
-                _completedResult = completedResult;
+                TestExecutionOfExternaActionInServiceQueue();
             }
-
-            public bool OperationCompleted { get; private set; }
-
-            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
-            public T Result { get; private set; } = default(T);
-            private readonly T _completedResult;
-
-            public T BeginOperation()
+            finally
             {
-                ServiceRef.RegisterPendingOperation(this, _completedEvent, () => Result);
-
-                Task.Factory.StartNew(() =>
-                {
-                    //simulate some work
-                    Task.Delay(1000).Wait();
-                    ServiceRef.Create<IPendingOpsService<T>>(this)
-                        .CompleteOperation(_completedResult);
-                });
-
-                return default(T);
-            }
-
-            public void CompleteOperation(T result)
-            {
-                Result = result;
-                OperationCompleted = true;
-                _completedEvent.Set();
+                ActionQueue.ExitMonitor(callTracer);
             }
         }
 
-        [TestMethod]
-        public void TestPendingOperationsT()
-        {
-            var pendingOpsTestService = ServiceRef.Create<IPendingOpsService<string>>(new PendingOpsService<string>("DONE"));
-
-            Assert.IsFalse(pendingOpsTestService.OperationCompleted);
-            Assert.IsNull(pendingOpsTestService.Result);
-
-            pendingOpsTestService.BeginOperation();
-
-            Assert.IsTrue(pendingOpsTestService.OperationCompleted);
-            Assert.AreEqual("DONE", pendingOpsTestService.Result);
-        }
-
-
-        public interface IPendingOpsServiceAsync
-        {
-            bool OperationCompleted { get; }
-
-            Task<bool> BeginOperationAsync();
-
-            Task CompleteOperationAsync();
-        }
-
-        class PendingOpsServiceAsync : IPendingOpsServiceAsync
-        {
-            public bool OperationCompleted { get; private set; }
-
-            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
-            public Task<bool> BeginOperationAsync()
-            {
-                ServiceRef.RegisterPendingOperation(this, _completedEvent, () => Task.FromResult(OperationCompleted));
-
-                Task.Factory.StartNew(async () =>
-                {
-                    //simulate some work
-                    await Task.Delay(1000);
-                    await ServiceRef.Create<IPendingOpsServiceAsync>(this)
-                        .CompleteOperationAsync();
-                });
-
-                return Task.FromResult(false);
-            }
-
-            public Task CompleteOperationAsync()
-            {
-                OperationCompleted = true;
-                _completedEvent.Set();
-                return Task.CompletedTask;
-            }
-        }
-
-        [TestMethod]
-        public async Task TestPendingOperationsAsyncVersion()
-        {
-            var pendingOpsTestService = ServiceRef.Create<IPendingOpsServiceAsync>(new PendingOpsServiceAsync());
-
-            Assert.IsFalse(pendingOpsTestService.OperationCompleted);
-
-            await pendingOpsTestService.BeginOperationAsync();
-
-            Assert.IsTrue(pendingOpsTestService.OperationCompleted);
-        }
     }
 }

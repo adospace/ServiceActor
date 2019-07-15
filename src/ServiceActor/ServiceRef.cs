@@ -164,8 +164,9 @@ namespace ServiceActor
             actionQueue.Enqueue(actionToExecute);
         }
 
-        private static readonly ConcurrentDictionary<object, IPendingOperation> _pendingOperations = new ConcurrentDictionary<object, IPendingOperation>();
+        #region Pending Operation
 
+        #region Pending Operations
         public static void RegisterPendingOperation(object objectWrapped, IPendingOperation pendingOperation)
         {
             if (objectWrapped == null)
@@ -178,10 +179,20 @@ namespace ServiceActor
                 throw new ArgumentNullException(nameof(pendingOperation));
             }
 
-            if (!_pendingOperations.TryAdd(objectWrapped, pendingOperation))
+            ActionQueue actionQueue = null;
+            if (_wrappersCache.TryGetValue(objectWrapped, out var wrapperTypes))
             {
-                throw new InvalidOperationException($"Pending operation already registerd for object '{objectWrapped}'");
+                var firstWrapper = wrapperTypes.First().Value;
+
+                actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
             }
+
+            if (actionQueue == null)
+            {
+                throw new InvalidOperationException($"Object {objectWrapped} of type '{objectWrapped.GetType()}' is not managed by ServiceActor: call ServiceRef.Create<> to create a service actor for it");
+            }
+
+            actionQueue.RegisterPendingOperation(pendingOperation);
         }
 
         public static void RegisterPendingOperation(object objectWrapped, WaitHandle waitHandle, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
@@ -201,18 +212,11 @@ namespace ServiceActor
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds, actionOnCompletion));
+            RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds, actionOnCompletion));
         }
+        #endregion
 
-        public static bool TryGetPendingOperation(object objectWrapped, out IPendingOperation pendingOperation)
-        {
-            if (objectWrapped == null)
-            {
-                throw new ArgumentNullException(nameof(objectWrapped));
-            }
-
-            return _pendingOperations.TryRemove(objectWrapped, out pendingOperation);
-        }
+        #endregion
 
         private static ActionQueue GetActionQueueFor(Type typeToWrap, object aggregateKey)
         {
