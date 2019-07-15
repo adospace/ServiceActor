@@ -34,8 +34,8 @@ namespace ServiceActor
 
         public string TypeToWrapName => TypeToWrap.Name.Replace('`', '_');
 
-        private string TypeToWrapFullName => TypeToWrap.GetTypeReferenceCode();
-        private string TypeOfObjectToWrapFullName => TypeOfObjectToWrap.GetTypeReferenceCode();
+        public string TypeToWrapFullName => TypeToWrap.GetTypeReferenceCode();
+        public string TypeOfObjectToWrapFullName => TypeOfObjectToWrap.GetTypeReferenceCode();
 
         private readonly bool _blockCallerByDefault = false;
 

@@ -1,11 +1,15 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 
 namespace ServiceActor
@@ -63,11 +67,13 @@ namespace ServiceActor
 
             actionQueue = actionQueue ?? GetActionQueueFor(typeof(T), aggregateKey);
 
-            var script = GetOrCreateScript<T>(objectToWrap.GetType());
+            //var script = GetOrCreateScript<T>(objectToWrap.GetType());
 
-            var scriptState = script.RunAsync(new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }).Result;
+            //var scriptState = script.RunAsync(new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }).Result;
 
-            wrapper = scriptState.ReturnValue;
+            //wrapper = scriptState.ReturnValue;
+            wrapper = GetOrCreateWrapper(typeof(T), objectToWrap, actionQueue);
+
             wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<Type, object>());
 
             wrapperTypes.TryAdd(typeof(T), wrapper);
@@ -75,12 +81,12 @@ namespace ServiceActor
             return (T)wrapper;
         }
 
-        private class ScriptTypeKey
+        private class AssemblyTypeKey
         {
             private readonly Type _interfaceType;
             private readonly Type _implType;
 
-            public ScriptTypeKey(Type @interfaceType, Type implType)
+            public AssemblyTypeKey(Type @interfaceType, Type implType)
             {
                 _interfaceType = interfaceType;
                 _implType = implType;
@@ -88,7 +94,7 @@ namespace ServiceActor
 
             public override bool Equals(object obj)
             {
-                var key = obj as ScriptTypeKey;
+                var key = obj as AssemblyTypeKey;
                 return key != null &&
                        EqualityComparer<Type>.Default.Equals(_interfaceType, key._interfaceType) &&
                        EqualityComparer<Type>.Default.Equals(_implType, key._implType);
@@ -103,22 +109,118 @@ namespace ServiceActor
             }
         }
 
-        private readonly static ConcurrentDictionary<ScriptTypeKey, Script> _scriptCache = new ConcurrentDictionary<ScriptTypeKey, Script>();
+        private readonly static ConcurrentDictionary<AssemblyTypeKey, Assembly> _wrapperAssemblyCache = new ConcurrentDictionary<AssemblyTypeKey, Assembly>();
 
-        private static Script<T> GetOrCreateScript<T>(Type implType)
+        //private static Script<T> GetOrCreateScript<T>(Type implType)
+        //{
+        //    var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), implType).TransformText();
+        //    //Console.WriteLine(asyncActorCode);
+        //    var script = _scriptCache.GetOrAdd(new ScriptTypeKey(typeof(T), implType), CSharpScript.Create<T>(
+        //        asyncActorCode,
+        //        options: ScriptOptions.Default.AddReferences(
+        //            Assembly.GetExecutingAssembly(),
+        //            typeof(T).Assembly,
+        //            typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
+        //        globalsType: typeof(ScriptGlobals)
+        //        ));
+
+        //    return (Script<T>)script;
+        //}
+
+        public static bool EnableCache { get; set; } = true;
+
+        public static string CachePath { get; set; }
+
+        public static void ClearCache()
         {
-            var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), implType).TransformText();
-            //Console.WriteLine(asyncActorCode);
-            var script = _scriptCache.GetOrAdd(new ScriptTypeKey(typeof(T), implType), CSharpScript.Create<T>(
-                asyncActorCode,
-                options: ScriptOptions.Default.AddReferences(
-                    Assembly.GetExecutingAssembly(),
-                    typeof(T).Assembly,
-                    typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-                globalsType: typeof(ScriptGlobals)
-                ));
+            if (EnableCache)
+            {
+                var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor");
+                if (Directory.Exists(assemblyCacheFolder))
+                {
+                    Directory.Delete(assemblyCacheFolder);
+                }
+            }
+        }
 
-            return (Script<T>)script;
+        private static object GetOrCreateWrapper(Type interfaceType, object objectToWrap, ActionQueue actionQueue)
+        {
+            var implType = objectToWrap.GetType();
+            var sourceTemplate = new ServiceActorWrapperTemplate(interfaceType, implType);
+
+            var wrapperAssembly = _wrapperAssemblyCache.GetOrAdd(new AssemblyTypeKey(interfaceType, implType), (key) =>
+            {
+                var source = sourceTemplate.TransformText();
+
+                string assemblyFilePath = null;
+                if (EnableCache)
+                {
+                    var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor");
+                    Directory.CreateDirectory(assemblyCacheFolder);
+
+                    assemblyFilePath = Path.Combine(assemblyCacheFolder, MD5Hash(source) + ".dll");
+
+                    if (File.Exists(assemblyFilePath))
+                    {
+                        return Assembly.LoadFile(assemblyFilePath);
+                    }
+                }               
+
+                var script = CSharpScript.Create(
+                    source,
+                    options: ScriptOptions.Default.AddReferences(
+                        Assembly.GetExecutingAssembly(),
+                        interfaceType.Assembly,
+                        implType.Assembly,
+                        typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly)
+                    );
+
+                var diagnostics = script.Compile();
+                if (diagnostics.Any())
+                {
+                    throw new InvalidOperationException();
+                }
+
+                var compilation = script.GetCompilation();
+
+                //var tempFile = Path.GetTempFileName();
+                using (var dllStream = new MemoryStream())
+                {
+                    var emitResult = compilation.Emit(dllStream);
+                    if (!emitResult.Success)
+                    {
+                        // emitResult.Diagnostics
+                        throw new InvalidOperationException();
+                    }
+
+                    if (assemblyFilePath != null)
+                    {
+                        File.WriteAllBytes(assemblyFilePath, dllStream.ToArray());
+                    }
+
+                    return Assembly.Load(dllStream.ToArray());
+                }           
+            });
+
+            //return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);
+            var wrapperImplType = wrapperAssembly.GetTypes().First(_ => _.GetInterface("IServiceActorWrapper") != null);
+            return Activator.CreateInstance(
+                wrapperImplType, objectToWrap, sourceTemplate.TypeToWrapFullName, actionQueue);
+        }
+
+        private static string MD5Hash(string input)
+        {
+            using (var md5provider = new MD5CryptoServiceProvider())
+            {
+                byte[] bytes = md5provider.ComputeHash(new UTF8Encoding().GetBytes(input));
+
+                var hash = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    hash.Append(bytes[i].ToString("x2"));
+                }
+                return hash.ToString();
+            }
         }
 
         /// <summary>

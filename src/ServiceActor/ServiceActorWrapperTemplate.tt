@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ServiceActor;
 
+//namespace ServiceActor {
+
 public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IServiceActorWrapper
 {
     private readonly <#= TypeToWrapFullName #> _objectToWrap;
@@ -288,4 +290,6 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
     
 }
 
-return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);
+//}//ServiceActor namespace
+
+//return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);
