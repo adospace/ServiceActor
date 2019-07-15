@@ -51,26 +51,46 @@ namespace ServiceActor
 
             public bool WaitForPendingOperationCompletion()
             {
-                foreach (var pendingOperation in _pendingOperations)
+                if (_pendingOperations.Count == 0)
                 {
-                    pendingOperation.WaitForCompletion();
+                    return false;
                 }
 
-                return _pendingOperations.Any();
+                bool completed = true;
+                foreach (var pendingOperation in _pendingOperations)
+                {
+                    if (!pendingOperation.WaitForCompletion())
+                        completed = false;
+                }
+
+                return completed;
             }
 
-            public object GetLastPendingOperationResult()
+            public T GetLastPendingOperationResult<T>()
             {
-                var lastPendingOperation = _pendingOperations
+                var lastPendingOperationWithResult = _pendingOperations
                     .OfType<IPendingOperationWithResult>()
                     .LastOrDefault();
 
-                if (lastPendingOperation == null)
+                if (lastPendingOperationWithResult == null)
                 {
-                    throw new InvalidOperationException("Unable to get result of the pending operation");
+                     var lastPendingOperation = _pendingOperations
+                        .LastOrDefault();
+
+                    if (lastPendingOperation == null)
+                    {
+                        return default(T);
+                    }
+
+                    if (typeof(T) == typeof(bool))
+                    {
+                        return (T)(object)true;
+                    }
+
+                    return default(T);
                 }
 
-                return lastPendingOperation.GetResult();
+                return (T)lastPendingOperationWithResult.GetResult();
             }
         }
 

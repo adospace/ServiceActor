@@ -21,13 +21,15 @@ namespace ServiceActor
             _actionAfterCompletion = actionAfterCompletion;
         }
 
-        public void WaitForCompletion()
+        public bool WaitForCompletion()
         {
             var completed = _timeoutMilliseconds > 0 ? 
                     _waitHandler.WaitOne(_timeoutMilliseconds) :
                     _waitHandler.WaitOne();
 
             _actionAfterCompletion?.Invoke(completed);
+
+            return completed;
         }
     }
 

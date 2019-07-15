@@ -154,17 +154,23 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(");\r\n\r\n            executedEvent.WaitOne();\r\n\r\n            if (exceptionThrown != " +
-                    "null)\r\n                throw exceptionThrown;\r\n\r\n            if (invocationItem." +
-                    "WaitForPendingOperationCompletion())\r\n            {\r\n                res = (");
+            this.Write(@");
+
+            executedEvent.WaitOne();
+
+            if (exceptionThrown != null)
+                throw exceptionThrown;
+
+            if (invocationItem.WaitForPendingOperationCompletion())
+            {
+                res = invocationItem.GetLastPendingOperationResult<");
             
             #line 65 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.PropertyType.GetTypeReferenceCode()));
             
             #line default
             #line hidden
-            this.Write(")invocationItem.GetLastPendingOperationResult();\r\n            }\r\n\r\n            re" +
-                    "turn res;\r\n\r\n            ");
+            this.Write(">();\r\n            }\r\n\r\n            return res;\r\n\r\n            ");
             
             #line 70 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
@@ -531,18 +537,23 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(");\r\n\r\n            await executedEvent.WaitAsync();\r\n\r\n            if (exceptionTh" +
-                    "rown != null)\r\n                throw exceptionThrown;\r\n\r\n            if (invocat" +
-                    "ionItem.WaitForPendingOperationCompletion())\r\n            {\r\n                res" +
-                    " = (");
+            this.Write(@");
+
+            await executedEvent.WaitAsync();
+
+            if (exceptionThrown != null)
+                throw exceptionThrown;
+
+            if (invocationItem.WaitForPendingOperationCompletion())
+            {
+                res = invocationItem.GetLastPendingOperationResult<");
             
             #line 237 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
             
             #line default
             #line hidden
-            this.Write(")invocationItem.GetLastPendingOperationResult();\r\n            }\r\n\r\n            re" +
-                    "turn res;\r\n\r\n            ");
+            this.Write(">();\r\n            }\r\n\r\n            return res;\r\n\r\n            ");
             
             #line 242 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
@@ -614,17 +625,23 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write(");\r\n\r\n            executedEvent.WaitOne();\r\n\r\n            if (exceptionThrown != " +
-                    "null)\r\n                throw exceptionThrown;\r\n\r\n            if (invocationItem." +
-                    "WaitForPendingOperationCompletion())\r\n            {\r\n                res = (");
+            this.Write(@");
+
+            executedEvent.WaitOne();
+
+            if (exceptionThrown != null)
+                throw exceptionThrown;
+
+            if (invocationItem.WaitForPendingOperationCompletion())
+            {
+                res = invocationItem.GetLastPendingOperationResult<");
             
             #line 277 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetTypeReferenceCode()));
             
             #line default
             #line hidden
-            this.Write(")invocationItem.GetLastPendingOperationResult();\r\n            }\r\n\r\n            re" +
-                    "turn res;\r\n\r\n            ");
+            this.Write(">();\r\n            }\r\n\r\n            return res;\r\n\r\n            ");
             
             #line 282 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 

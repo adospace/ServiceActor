@@ -62,7 +62,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             if (invocationItem.WaitForPendingOperationCompletion())
             {
-                res = (<#= property.PropertyType.GetTypeReferenceCode() #>)invocationItem.GetLastPendingOperationResult();
+                res = invocationItem.GetLastPendingOperationResult<<#= property.PropertyType.GetTypeReferenceCode() #>>();
             }
 
             return res;
@@ -234,7 +234,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             if (invocationItem.WaitForPendingOperationCompletion())
             {
-                res = (<#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>)invocationItem.GetLastPendingOperationResult();
+                res = invocationItem.GetLastPendingOperationResult<<#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>>();
             }
 
             return res;
@@ -274,7 +274,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             if (invocationItem.WaitForPendingOperationCompletion())
             {
-                res = (<#= method.Info.ReturnType.GetTypeReferenceCode() #>)invocationItem.GetLastPendingOperationResult();
+                res = invocationItem.GetLastPendingOperationResult<<#= method.Info.ReturnType.GetTypeReferenceCode() #>>();
             }
 
             return res;
