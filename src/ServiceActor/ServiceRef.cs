@@ -37,7 +37,7 @@ namespace ServiceActor
                 throw new ArgumentNullException(nameof(objectToWrap));
             }
 
-            if (objectToWrap is IActionQueueOwner)
+            if (objectToWrap is IServiceActorWrapper)
             {
                 //objectToWrap is already a wrapper
                 //test if it's the right interface
@@ -58,7 +58,7 @@ namespace ServiceActor
 
                 var firstWrapper = wrapperTypes.First().Value;
 
-                actionQueue = ((IActionQueueOwner)firstWrapper).ActionQueue;
+                actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
             }
 
             actionQueue = actionQueue ?? GetActionQueueFor(typeof(T), aggregateKey);
@@ -141,9 +141,9 @@ namespace ServiceActor
 
             ActionQueue actionQueue = null;
 
-            if (serviceObject is IActionQueueOwner)
+            if (serviceObject is IServiceActorWrapper)
             {
-                actionQueue = ((IActionQueueOwner)serviceObject).ActionQueue;
+                actionQueue = ((IServiceActorWrapper)serviceObject).ActionQueue;
             }
 
             if (actionQueue == null)
@@ -152,7 +152,7 @@ namespace ServiceActor
                 {
                     var firstWrapper = wrapperTypes.First().Value;
 
-                    actionQueue = ((IActionQueueOwner)firstWrapper).ActionQueue;
+                    actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
                 }
             }
 

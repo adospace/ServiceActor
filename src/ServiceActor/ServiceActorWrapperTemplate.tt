@@ -11,14 +11,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using ServiceActor;
 
-public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IActionQueueOwner
+public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IServiceActorWrapper
 {
     private readonly <#= TypeToWrapFullName #> _objectToWrap;
+    private readonly string _typeOfObjectToWrap;
+
+    public object WrappedObject { get => _objectToWrap; }
     public ActionQueue ActionQueue { get; }
 
-    public <#= TypeToWrapName #>AsyncActorWrapper(<#= TypeToWrapFullName #> objectToWrap, ServiceActor.ActionQueue actionQueue)
+    public <#= TypeToWrapName #>AsyncActorWrapper(<#= TypeToWrapFullName #> objectToWrap, string typeOfObjectToWrap, ServiceActor.ActionQueue actionQueue)
     {
         _objectToWrap = objectToWrap ?? throw new ArgumentNullException(nameof(objectToWrap));
+        _typeOfObjectToWrap = typeOfObjectToWrap ?? throw new ArgumentNullException(nameof(typeOfObjectToWrap));
         ActionQueue = actionQueue ?? throw new ArgumentNullException(nameof(actionQueue));
     }
 
@@ -37,7 +41,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <#= property.PropertyType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             Exception exceptionThrown = null;
-            ActionQueue.Enqueue(() =>
+            ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
             {
                 try
                 {
@@ -88,7 +92,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 var executedEvent = new AutoResetEvent(false);
                 Exception exceptionThrown = null;
 
-                ActionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
                     try
                     {
@@ -114,7 +118,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 <# } else { #>
 
-                ActionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
                     _objectToWrap.<#= property.Name #> = value;
                     if (ServiceRef.TryGetPendingOperation(_objectToWrap, out var pendingOperation))
@@ -152,7 +156,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 var executedEvent = new AutoResetEvent(false);
                 Exception exceptionThrown = null;
-                ActionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
                     try
                     {
@@ -177,7 +181,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 <# } else { #>
 
-                ActionQueue.Enqueue(() =>
+                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
                     _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                     
@@ -208,7 +212,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             Exception exceptionThrown = null;
-            ActionQueue.Enqueue(async () =>
+            ActionQueue.Enqueue(this, _typeOfObjectToWrap, async () =>
             {
                 try
                 {
@@ -253,7 +257,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
             var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             Exception exceptionThrown = null;
-            ActionQueue.Enqueue(async () =>
+            ActionQueue.Enqueue(this, _typeOfObjectToWrap, async () =>
             {
                 try
                 {
@@ -301,7 +305,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <#= method.Info.ReturnType.GetTypeReferenceCode() #> res = default;
             var executedEvent = new AutoResetEvent(false);
             Exception exceptionThrown = null;
-            ActionQueue.Enqueue(() =>
+            ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
             {
                 try
                 {
@@ -338,4 +342,4 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
     
 }
 
-return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, ActionQueueToShare);
+return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);

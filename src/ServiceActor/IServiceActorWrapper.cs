@@ -4,8 +4,9 @@ using System.Text;
 
 namespace ServiceActor
 {
-    public interface IActionQueueOwner
+    public interface IServiceActorWrapper
     {
+        object WrappedObject { get; }
         ActionQueue ActionQueue { get; }
     }
 }
