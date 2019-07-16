@@ -206,7 +206,7 @@ namespace ServiceActor
             {
                 //if the calling thread is the same as the executing action thread then just pass thru
                 action();
-                return _executingInvocationItem;
+                return null;
             }
 
             var invocationItem = new InvocationItem(

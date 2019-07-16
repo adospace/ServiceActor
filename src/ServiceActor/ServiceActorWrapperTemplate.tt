@@ -11,8 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using ServiceActor;
 
-//namespace ServiceActor {
-
 public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>, ServiceActor.IServiceActorWrapper
 {
     private readonly <#= TypeToWrapFullName #> _objectToWrap;
@@ -55,12 +53,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
 
-            invocationItem.WaitExecuted();
+            invocationItem?.WaitExecuted();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            if (invocationItem.WaitForPendingOperationCompletion())
+            if (invocationItem != null && invocationItem.WaitForPendingOperationCompletion())
             {
                 res = invocationItem.GetLastPendingOperationResult<<#= property.PropertyType.GetTypeReferenceCode() #>>();
             }
@@ -96,12 +94,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
 
-                invocationItem.WaitExecuted();
+                invocationItem?.WaitExecuted();
 
                 if (exceptionThrown != null)
                     throw exceptionThrown;
 
-                invocationItem.WaitForPendingOperationCompletion();
+                invocationItem?.WaitForPendingOperationCompletion();
 
                 <# } else { #>
 
@@ -145,12 +143,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
-                invocationItem.WaitExecuted();
+                invocationItem?.WaitExecuted();
 
                 if (exceptionThrown != null)
                     throw exceptionThrown;
 
-                invocationItem.WaitForPendingOperationCompletion();
+                invocationItem?.WaitForPendingOperationCompletion();
 
                 <# } else { #>
 
@@ -185,12 +183,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 }
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>, true);
 
-            await invocationItem.WaitExecutedAsync();
+            await invocationItem?.WaitExecutedAsync();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            invocationItem.WaitForPendingOperationCompletion();
+            invocationItem?.WaitForPendingOperationCompletion();
 
             <# } #>
 
@@ -221,12 +219,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 }
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>, true);
 
-            await invocationItem.WaitExecutedAsync();
+            await invocationItem?.WaitExecutedAsync();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            if (invocationItem.WaitForPendingOperationCompletion())
+            if (invocationItem != null && invocationItem.WaitForPendingOperationCompletion())
             {
                 res = invocationItem.GetLastPendingOperationResult<<#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>>();
             }
@@ -259,12 +257,12 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 }
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
-            invocationItem.WaitExecuted();
+            invocationItem?.WaitExecuted();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            if (invocationItem.WaitForPendingOperationCompletion())
+            if (invocationItem != null && invocationItem.WaitForPendingOperationCompletion())
             {
                 res = invocationItem.GetLastPendingOperationResult<<#= method.Info.ReturnType.GetTypeReferenceCode() #>>();
             }
@@ -279,7 +277,3 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
     <# } #>
     
 }
-
-//}//ServiceActor namespace
-
-//return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);

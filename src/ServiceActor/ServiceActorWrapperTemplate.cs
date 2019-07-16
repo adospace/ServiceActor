@@ -31,23 +31,23 @@ namespace ServiceActor
         public virtual string TransformText()
         {
             this.Write("using System;\r\nusing System.Linq;\r\nusing System.Threading;\r\nusing System.Threadin" +
-                    "g.Tasks;\r\nusing ServiceActor;\r\n\r\n//namespace ServiceActor {\r\n\r\npublic class ");
+                    "g.Tasks;\r\nusing ServiceActor;\r\n\r\npublic class ");
             
-            #line 16 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 14 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapName));
             
             #line default
             #line hidden
             this.Write("AsyncActorWrapper : ");
             
-            #line 16 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 14 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapFullName));
             
             #line default
             #line hidden
             this.Write(", ServiceActor.IServiceActorWrapper\r\n{\r\n    private readonly ");
             
-            #line 18 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 16 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapFullName));
             
             #line default
@@ -56,14 +56,14 @@ namespace ServiceActor
                     "bject WrappedObject { get => _objectToWrap; }\r\n    public ActionQueue ActionQueu" +
                     "e { get; }\r\n\r\n    public ");
             
-            #line 24 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 22 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapName));
             
             #line default
             #line hidden
             this.Write("AsyncActorWrapper(");
             
-            #line 24 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 22 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapFullName));
             
             #line default
@@ -77,56 +77,56 @@ namespace ServiceActor
 
     ");
             
-            #line 31 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 29 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  foreach (var property in GetProperties()) { 
             
             #line default
             #line hidden
             this.Write("    public ");
             
-            #line 32 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 30 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.PropertyType.GetTypeReferenceCode()));
             
             #line default
             #line hidden
             this.Write(" ");
             
-            #line 32 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 30 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
             #line hidden
             this.Write("\r\n    {\r\n        ");
             
-            #line 34 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 32 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (property.CanRead) { 
             
             #line default
             #line hidden
             this.Write("        get\r\n        {\r\n            ");
             
-            #line 37 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 35 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (PropertyGetAllowsConcurrentAccess(property)) { 
             
             #line default
             #line hidden
             this.Write("\r\n            return _objectToWrap.");
             
-            #line 39 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 37 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
             #line hidden
             this.Write(";\r\n\r\n            ");
             
-            #line 41 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 39 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
             #line hidden
             this.Write("\r\n            ");
             
-            #line 43 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 41 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.PropertyType.GetTypeReferenceCode()));
             
             #line default
@@ -136,7 +136,7 @@ namespace ServiceActor
                     "  {\r\n                try\r\n                {\r\n                    res = _objectTo" +
                     "Wrap.");
             
-            #line 49 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 47 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
@@ -144,72 +144,72 @@ namespace ServiceActor
             this.Write(";\r\n                }\r\n                catch (Exception ex)\r\n                {\r\n  " +
                     "                  exceptionThrown = ex;\r\n                }\r\n\r\n            }, ");
             
-            #line 56 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 54 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
             
             #line default
             #line hidden
             this.Write(@");
 
-            invocationItem.WaitExecuted();
+            invocationItem?.WaitExecuted();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            if (invocationItem.WaitForPendingOperationCompletion())
+            if (invocationItem != null && invocationItem.WaitForPendingOperationCompletion())
             {
                 res = invocationItem.GetLastPendingOperationResult<");
             
-            #line 65 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 63 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.PropertyType.GetTypeReferenceCode()));
             
             #line default
             #line hidden
             this.Write(">();\r\n            }\r\n\r\n            return res;\r\n\r\n            ");
             
-            #line 70 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 68 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("        }\r\n        ");
             
-            #line 72 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 70 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("        ");
             
-            #line 73 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 71 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (property.CanWrite) { 
             
             #line default
             #line hidden
             this.Write("        set\r\n        {\r\n            ");
             
-            #line 76 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 74 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (PropertySetAllowsConcurrentAccess(property)) { 
             
             #line default
             #line hidden
             this.Write("\r\n            _objectToWrap.");
             
-            #line 78 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 76 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
             #line hidden
             this.Write(" = value;\r\n\r\n            ");
             
-            #line 80 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 78 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
             #line hidden
             this.Write("\r\n                ");
             
-            #line 82 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 80 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (BlockCaller(property)) { 
             
             #line default
@@ -219,7 +219,7 @@ namespace ServiceActor
                     " {\r\n                    try\r\n                    {\r\n                        _obj" +
                     "ectToWrap.");
             
-            #line 90 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 88 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
@@ -228,16 +228,16 @@ namespace ServiceActor
                     "               {\r\n                        exceptionThrown = ex;\r\n               " +
                     "     }\r\n\r\n                }, ");
             
-            #line 97 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 95 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
             
             #line default
             #line hidden
-            this.Write(");\r\n\r\n                invocationItem.WaitExecuted();\r\n\r\n                if (excep" +
-                    "tionThrown != null)\r\n                    throw exceptionThrown;\r\n\r\n             " +
-                    "   invocationItem.WaitForPendingOperationCompletion();\r\n\r\n                ");
+            this.Write(");\r\n\r\n                invocationItem?.WaitExecuted();\r\n\r\n                if (exce" +
+                    "ptionThrown != null)\r\n                    throw exceptionThrown;\r\n\r\n            " +
+                    "    invocationItem?.WaitForPendingOperationCompletion();\r\n\r\n                ");
             
-            #line 106 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 104 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
@@ -245,91 +245,91 @@ namespace ServiceActor
             this.Write("\r\n                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>\r\n         " +
                     "       {\r\n                    _objectToWrap.");
             
-            #line 110 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 108 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(property.Name));
             
             #line default
             #line hidden
             this.Write(" = value;\r\n                }, ");
             
-            #line 111 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 109 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
             
             #line default
             #line hidden
             this.Write(");\r\n\r\n                ");
             
-            #line 113 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 111 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n            ");
             
-            #line 115 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 113 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("        }\r\n        ");
             
-            #line 117 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 115 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("    }\r\n\t");
             
-            #line 119 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 117 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n    ");
             
-            #line 121 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 119 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  foreach (var method in GetMethods()) { 
             
             #line default
             #line hidden
             this.Write("    \r\n        ");
             
-            #line 123 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 121 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (method.Info.ReturnType == typeof(void)) { 
             
             #line default
             #line hidden
             this.Write("        public ");
             
-            #line 124 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 122 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
             this.Write("\r\n        {\r\n            ");
             
-            #line 126 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 124 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (MethodAllowsConcurrentAccess(method)) { 
             
             #line default
             #line hidden
             this.Write("\r\n            _objectToWrap.");
             
-            #line 128 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 126 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
             this.Write(";\r\n\r\n            ");
             
-            #line 130 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 128 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
             #line hidden
             this.Write("\r\n                ");
             
-            #line 132 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 130 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (BlockCaller(method)) { 
             
             #line default
@@ -339,7 +339,7 @@ namespace ServiceActor
                     "\r\n                    try\r\n                    {\r\n                        _objec" +
                     "tToWrap.");
             
-            #line 139 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 137 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
@@ -348,16 +348,16 @@ namespace ServiceActor
                     "       {\r\n                        exceptionThrown = ex;\r\n                    }\r\n" +
                     "\r\n                }, ");
             
-            #line 146 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 144 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
             
             #line default
             #line hidden
-            this.Write(");\r\n\r\n                invocationItem.WaitExecuted();\r\n\r\n                if (excep" +
-                    "tionThrown != null)\r\n                    throw exceptionThrown;\r\n\r\n             " +
-                    "   invocationItem.WaitForPendingOperationCompletion();\r\n\r\n                ");
+            this.Write(");\r\n\r\n                invocationItem?.WaitExecuted();\r\n\r\n                if (exce" +
+                    "ptionThrown != null)\r\n                    throw exceptionThrown;\r\n\r\n            " +
+                    "    invocationItem?.WaitForPendingOperationCompletion();\r\n\r\n                ");
             
-            #line 155 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 153 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
@@ -365,63 +365,63 @@ namespace ServiceActor
             this.Write("\r\n                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>\r\n         " +
                     "       {\r\n                    _objectToWrap.");
             
-            #line 159 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 157 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
             this.Write(";\r\n                }, ");
             
-            #line 160 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 158 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
             
             #line default
             #line hidden
             this.Write(");\r\n\r\n                ");
             
-            #line 162 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 160 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n            ");
             
-            #line 164 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 162 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("        }\r\n        ");
             
-            #line 166 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 164 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else if (method.Info.ReturnType == typeof(Task)) { 
             
             #line default
             #line hidden
             this.Write("        public async ");
             
-            #line 167 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 165 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
             this.Write("\r\n        {\r\n            ");
             
-            #line 169 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 167 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (MethodAllowsConcurrentAccess(method)) { 
             
             #line default
             #line hidden
             this.Write("\r\n            await _objectToWrap.");
             
-            #line 171 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 169 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
             this.Write(";\r\n\r\n            ");
             
-            #line 173 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 171 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
@@ -430,7 +430,7 @@ namespace ServiceActor
                     " ActionQueue.Enqueue(this, _typeOfObjectToWrap, async () =>\r\n            {\r\n    " +
                     "            try\r\n                {\r\n                    await _objectToWrap.");
             
-            #line 180 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 178 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
@@ -438,58 +438,58 @@ namespace ServiceActor
             this.Write(";\r\n                }\r\n                catch (Exception ex)\r\n                {\r\n  " +
                     "                  exceptionThrown = ex;\r\n                }\r\n            }, ");
             
-            #line 186 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 184 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
             
             #line default
             #line hidden
-            this.Write(", true);\r\n\r\n            await invocationItem.WaitExecutedAsync();\r\n\r\n            " +
-                    "if (exceptionThrown != null)\r\n                throw exceptionThrown;\r\n\r\n        " +
-                    "    invocationItem.WaitForPendingOperationCompletion();\r\n\r\n            ");
+            this.Write(", true);\r\n\r\n            await invocationItem?.WaitExecutedAsync();\r\n\r\n           " +
+                    " if (exceptionThrown != null)\r\n                throw exceptionThrown;\r\n\r\n       " +
+                    "     invocationItem?.WaitForPendingOperationCompletion();\r\n\r\n            ");
             
-            #line 195 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 193 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n        }\r\n        ");
             
-            #line 198 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 196 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else if (method.Info.ReturnType.BaseType == typeof(Task)) { 
             
             #line default
             #line hidden
             this.Write("        public async ");
             
-            #line 199 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 197 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
             this.Write("\r\n        {\r\n            ");
             
-            #line 201 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 199 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (MethodAllowsConcurrentAccess(method)) { 
             
             #line default
             #line hidden
             this.Write("\r\n            var res = await _objectToWrap.");
             
-            #line 203 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 201 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
             this.Write(";\r\n\r\n            return res;\r\n\r\n            ");
             
-            #line 207 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 205 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
             #line hidden
             this.Write("\r\n            ");
             
-            #line 209 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 207 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
             
             #line default
@@ -503,7 +503,7 @@ namespace ServiceActor
                 {
                     res = await _objectToWrap.");
             
-            #line 216 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 214 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
@@ -511,72 +511,72 @@ namespace ServiceActor
             this.Write(";\r\n                }\r\n                catch (Exception ex)\r\n                {\r\n  " +
                     "                  exceptionThrown = ex;\r\n                }\r\n            }, ");
             
-            #line 222 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 220 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
             
             #line default
             #line hidden
             this.Write(@", true);
 
-            await invocationItem.WaitExecutedAsync();
+            await invocationItem?.WaitExecutedAsync();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            if (invocationItem.WaitForPendingOperationCompletion())
+            if (invocationItem != null && invocationItem.WaitForPendingOperationCompletion())
             {
                 res = invocationItem.GetLastPendingOperationResult<");
             
-            #line 231 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 229 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode()));
             
             #line default
             #line hidden
             this.Write(">();\r\n            }\r\n\r\n            return res;\r\n\r\n            ");
             
-            #line 236 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 234 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("        }\r\n        ");
             
-            #line 238 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 236 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
             #line hidden
             this.Write("        public ");
             
-            #line 239 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 237 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodDeclarationCode()));
             
             #line default
             #line hidden
             this.Write("\r\n        {\r\n            ");
             
-            #line 241 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 239 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  if (MethodAllowsConcurrentAccess(method)) { 
             
             #line default
             #line hidden
             this.Write("\r\n            var res = _objectToWrap.");
             
-            #line 243 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 241 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
             #line hidden
             this.Write("\r\n\r\n            return res;\r\n            ");
             
-            #line 246 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 244 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 
             
             #line default
             #line hidden
             this.Write("\r\n            ");
             
-            #line 248 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 246 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetTypeReferenceCode()));
             
             #line default
@@ -586,7 +586,7 @@ namespace ServiceActor
                     "  {\r\n                try\r\n                {\r\n                    res = _objectTo" +
                     "Wrap.");
             
-            #line 254 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 252 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.GetMethodInvocationCode()));
             
             #line default
@@ -594,70 +594,49 @@ namespace ServiceActor
             this.Write(";\r\n                }\r\n                catch (Exception ex)\r\n                {\r\n  " +
                     "                  exceptionThrown = ex;\r\n                }\r\n            }, ");
             
-            #line 260 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 258 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(method) ? "true" : "false"));
             
             #line default
             #line hidden
             this.Write(@");
 
-            invocationItem.WaitExecuted();
+            invocationItem?.WaitExecuted();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            if (invocationItem.WaitForPendingOperationCompletion())
+            if (invocationItem != null && invocationItem.WaitForPendingOperationCompletion())
             {
                 res = invocationItem.GetLastPendingOperationResult<");
             
-            #line 269 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 267 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Info.ReturnType.GetTypeReferenceCode()));
             
             #line default
             #line hidden
             this.Write(">();\r\n            }\r\n\r\n            return res;\r\n\r\n            ");
             
-            #line 274 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 272 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n        }\r\n        ");
             
-            #line 277 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 275 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write("\r\n    ");
             
-            #line 279 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
+            #line 277 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } 
             
             #line default
             #line hidden
-            this.Write("    \r\n}\r\n\r\n//}//ServiceActor namespace\r\n\r\n//return new ");
-            
-            #line 285 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapName));
-            
-            #line default
-            #line hidden
-            this.Write("AsyncActorWrapper((");
-            
-            #line 285 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapFullName));
-            
-            #line default
-            #line hidden
-            this.Write(")ObjectToWrap, \"");
-            
-            #line 285 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(TypeToWrapFullName));
-            
-            #line default
-            #line hidden
-            this.Write("\", ActionQueueToShare);");
+            this.Write("    \r\n}\r\n");
             return this.GenerationEnvironment.ToString();
         }
     }
