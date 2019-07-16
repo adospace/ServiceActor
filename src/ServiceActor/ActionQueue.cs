@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace ServiceActor
@@ -16,24 +17,51 @@ namespace ServiceActor
 
         public class InvocationItem
         {
+            private readonly AutoResetEvent _autoResetEvent;
+            private readonly AsyncAutoResetEvent _asyncAutoResetEvent;
+
             public InvocationItem(
                 Action action,
                 IServiceActorWrapper target,
                 string typeOfObjectToWrap,
-                bool keepContextForAsyncCalls = true)
+                bool keepContextForAsyncCalls = true,
+                bool async = false)
             {
                 Action = action;
                 Target = target;
                 TypeOfObjectToWrap = typeOfObjectToWrap;
                 KeepContextForAsyncCalls = keepContextForAsyncCalls;
+                if (async)
+                {
+                    _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
+                }
+                else
+                {
+                    _autoResetEvent = new AutoResetEvent(false);
+                }
             }
 
             public InvocationItem(
                 Action action,
-                bool keepContextForAsyncCalls = true)
+                bool keepContextForAsyncCalls = true,
+                bool async = false)
             {
                 Action = action;
                 KeepContextForAsyncCalls = keepContextForAsyncCalls;
+                if (async)
+                {
+                    _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
+                }
+                else
+                {
+                    _autoResetEvent = new AutoResetEvent(false);
+                }
+            }
+
+            internal void SignalExecuted()
+            {
+                _autoResetEvent?.Set();
+                _asyncAutoResetEvent?.Set();
             }
 
             public Action Action { get; private set; }
@@ -92,6 +120,16 @@ namespace ServiceActor
 
                 return (T)lastPendingOperationWithResult.GetResult();
             }
+
+            public void WaitExecuted()
+            {
+                _autoResetEvent.WaitOne();
+            }
+
+            public Task WaitExecutedAsync()
+            {
+                return _asyncAutoResetEvent.WaitAsync();
+            }
         }
 
         public ActionQueue()
@@ -119,13 +157,19 @@ namespace ServiceActor
                         System.Diagnostics.Debug.WriteLine(ex);
                     }
 
+
                     //System.Diagnostics.Debug.WriteLine($"-----Executed {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}");
                     if (_actionCallMonitor != null)
                     {
                         var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action);
                         _actionCallMonitor?.ExitMethod(callDetails);
                     }
+
+                    var executingInvocationItem = _executingInvocationItem;
+                    _executingInvocationItem = null;
                     _executingActionThreadId = null;
+
+                    executingInvocationItem.SignalExecuted();
                     //action.Invoke();
                     //Console.WriteLine($"Current Thread ID After action.Invoke: {Thread.CurrentThread.ManagedThreadId}");
                 }
@@ -141,7 +185,7 @@ namespace ServiceActor
             _actionQueue.Complete();
         }
 
-        public InvocationItem Enqueue(IServiceActorWrapper target, string typeOfObjectToWrap, Action action, bool keepContextForAsyncCalls = true)
+        public InvocationItem Enqueue(IServiceActorWrapper target, string typeOfObjectToWrap, Action action, bool keepContextForAsyncCalls = true, bool asyncEvent = false)
         {
             if (target == null)
             {
@@ -160,7 +204,7 @@ namespace ServiceActor
 
             if (Thread.CurrentThread.ManagedThreadId == _executingActionThreadId)
             {
-                //if the calling thread is the same as the first executing action then just pass thru
+                //if the calling thread is the same as the executing action thread then just pass thru
                 action();
                 return _executingInvocationItem;
             }
@@ -169,14 +213,15 @@ namespace ServiceActor
                 action, 
                 target,
                 typeOfObjectToWrap,
-                keepContextForAsyncCalls);
+                keepContextForAsyncCalls,
+                asyncEvent);
 
             _actionQueue.Post(invocationItem);
 
             return invocationItem;
         }
 
-        public InvocationItem Enqueue(Action action, bool keepContextForAsyncCalls = true)
+        public InvocationItem Enqueue(Action action, bool keepContextForAsyncCalls = true, bool asyncEvent = false)
         {
             if (action == null)
             {
@@ -192,7 +237,8 @@ namespace ServiceActor
 
             var invocationItem = new InvocationItem(
                 action,
-                keepContextForAsyncCalls
+                keepContextForAsyncCalls,
+                asyncEvent
             );
 
             _actionQueue.Post(invocationItem);

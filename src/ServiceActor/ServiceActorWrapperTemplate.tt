@@ -41,7 +41,6 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <# } else { #>
 
             <#= property.PropertyType.GetTypeReferenceCode() #> res = default;
-            var executedEvent = new AutoResetEvent(false);
             Exception exceptionThrown = null;
             var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
             {
@@ -54,10 +53,9 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     exceptionThrown = ex;
                 }
 
-                executedEvent.Set();
             }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
 
-            executedEvent.WaitOne();
+            invocationItem.WaitExecuted();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
@@ -83,7 +81,6 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 <# if (BlockCaller(property)) { #>
 
-                var executedEvent = new AutoResetEvent(false);
                 Exception exceptionThrown = null;
 
                 var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
@@ -97,10 +94,9 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                         exceptionThrown = ex;
                     }
 
-                    executedEvent.Set();
                 }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
 
-                executedEvent.WaitOne();
+                invocationItem.WaitExecuted();
 
                 if (exceptionThrown != null)
                     throw exceptionThrown;
@@ -135,7 +131,6 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 <# if (BlockCaller(method)) { #>
 
-                var executedEvent = new AutoResetEvent(false);
                 Exception exceptionThrown = null;
                 var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
@@ -147,10 +142,10 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     {
                         exceptionThrown = ex;
                     }
-                    executedEvent.Set();
+
                 }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
-                executedEvent.WaitOne();
+                invocationItem.WaitExecuted();
 
                 if (exceptionThrown != null)
                     throw exceptionThrown;
@@ -177,7 +172,6 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             <# } else { #>
 
-            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
             Exception exceptionThrown = null;
             var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, async () =>
             {
@@ -189,10 +183,9 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 {
                     exceptionThrown = ex;
                 }
-                executedEvent.Set();
-            }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
+            }, <#= KeepAsyncContext(method) ? "true" : "false" #>, true);
 
-            await executedEvent.WaitAsync();
+            await invocationItem.WaitExecutedAsync();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
@@ -214,7 +207,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <# } else { #>
 
             <#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #> res = default;
-            var executedEvent = new Nito.AsyncEx.AsyncAutoResetEvent(false);
+            
             Exception exceptionThrown = null;
             var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, async () =>
             {
@@ -226,10 +219,9 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 {
                     exceptionThrown = ex;
                 }
-                executedEvent.Set();
-            }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
+            }, <#= KeepAsyncContext(method) ? "true" : "false" #>, true);
 
-            await executedEvent.WaitAsync();
+            await invocationItem.WaitExecutedAsync();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
@@ -254,7 +246,6 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             <# } else { #>
 
             <#= method.Info.ReturnType.GetTypeReferenceCode() #> res = default;
-            var executedEvent = new AutoResetEvent(false);
             Exception exceptionThrown = null;
             var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
             {
@@ -266,10 +257,9 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 {
                     exceptionThrown = ex;
                 }
-                executedEvent.Set();
             }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
-            executedEvent.WaitOne();
+            invocationItem.WaitExecuted();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;

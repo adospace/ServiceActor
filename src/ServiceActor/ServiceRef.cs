@@ -16,12 +16,12 @@ namespace ServiceActor
 {
     public static class ServiceRef
     {
-        public class ScriptGlobals
-        {
-            public object ObjectToWrap { get; set; }
+        //public class ScriptGlobals
+        //{
+        //    public object ObjectToWrap { get; set; }
 
-            public ActionQueue ActionQueueToShare { get; set; }
-        }
+        //    public ActionQueue ActionQueueToShare { get; set; }
+        //}
 
         private static readonly ConcurrentDictionary<object, ConcurrentDictionary<Type, object>> _wrappersCache = new ConcurrentDictionary<object, ConcurrentDictionary<Type, object>>();
 
@@ -138,7 +138,7 @@ namespace ServiceActor
                 var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor");
                 if (Directory.Exists(assemblyCacheFolder))
                 {
-                    Directory.Delete(assemblyCacheFolder);
+                    Directory.Delete(assemblyCacheFolder, true);
                 }
             }
         }
