@@ -126,7 +126,7 @@ namespace ServiceActor
                 //_autoResetEvent.WaitOne();
                 if (!_autoResetEvent.WaitOne(30000))
                 {
-                    throw new InvalidOperationException();
+                    throw new TimeoutException();
                 }
             }
 

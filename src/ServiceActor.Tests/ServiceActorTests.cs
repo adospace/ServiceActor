@@ -492,6 +492,7 @@ namespace ServiceActor.Tests
 
         public interface IAsyncCounter
         {
+            [AllowConcurrentAccess]
             int Count { get; }
 
             Task IncrementAsync();
@@ -511,7 +512,7 @@ namespace ServiceActor.Tests
         }
 
         [TestMethod]
-        public async Task ServiceActorShouldRestoreThSynchronizationContext()
+        public async Task ServiceActorShouldRestoreTheSynchronizationContext()
         {
             var asyncConter = ServiceRef.Create<IAsyncCounter>(new CounterAsync());
 

@@ -105,51 +105,69 @@ namespace ServiceActor
                 Array.IndexOf(interfaceMapping.InterfaceMethods, method.Info)];
         }
 
-        //private bool PropertyGetAllowsConcurrentAccess(PropertyInfo propertyInfo)
-        //{
-        //    if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
-        //    {
-        //        return concurrentAccessAttributeOfActualType.PropertyGet;
-        //    }
+        private bool PropertyGetAllowsConcurrentAccess(PropertyInfo propertyInfo)
+        {
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
+            {
+                return concurrentAccessAttributeOfActualType.PropertyGet;
+            }
 
-        //    if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
-        //    {
-        //        return concurrentAccessAttribute.PropertyGet;
-        //    }
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
+            {
+                return concurrentAccessAttribute.PropertyGet;
+            }
 
-        //    return false;
-        //}
+            return false;
+        }
 
-        //private bool PropertySetAllowsConcurrentAccess(PropertyInfo propertyInfo)
-        //{
-        //    if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
-        //    {
-        //        return concurrentAccessAttributeOfActualType.PropertySet;
-        //    }
+        private bool PropertySetAllowsConcurrentAccess(PropertyInfo propertyInfo)
+        {
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
+            {
+                return concurrentAccessAttributeOfActualType.PropertySet;
+            }
 
-        //    if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
-        //    {
-        //        return concurrentAccessAttribute.PropertySet;
-        //    }
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttribute)
+            {
+                return concurrentAccessAttribute.PropertySet;
+            }
 
-        //    return false;
-        //}
+            return false;
+        }
 
         private bool MethodAllowsConcurrentAccess(InterfaceMethod method)
         {
-            if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
+            if (method.Info.Name.StartsWith("get_"))
             {
-                return true;
-            }
+                var property = method.InterfaceType.GetProperty(
+                    method.Info.Name.Substring(4));
 
-            if (Attribute.GetCustomAttribute(method.Info, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
-            {
-                return true;
+                if (PropertyGetAllowsConcurrentAccess(property))
+                {
+                    return true;
+                }
             }
-
-            if (Attribute.GetCustomAttribute(method.InterfaceType, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
+            else if (method.Info.Name.StartsWith("set_"))
             {
-                return true;
+                var property = method.InterfaceType.GetProperty(
+                    method.Info.Name.Substring(4));
+
+                if (PropertySetAllowsConcurrentAccess(property))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
+                {
+                    return true;
+                }
+
+                if (Attribute.GetCustomAttribute(method.Info, typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute)
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -165,31 +183,45 @@ namespace ServiceActor
             return false;
         }
 
-        //private bool BlockCaller(PropertyInfo propertyInfo)
-        //{
-        //    if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
-        //    {
-        //        return true;
-        //    }
-
-        //    if (Attribute.GetCustomAttribute(propertyInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
-        //    {
-        //        return true;
-        //    }
-
-        //    return _blockCallerByDefault;
-        //}
-
-        private bool BlockCaller(InterfaceMethod method)
+        private bool BlockCaller(PropertyInfo propertyInfo)
         {
-            if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
             {
                 return true;
             }
 
-            if (Attribute.GetCustomAttribute(method.Info, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
             {
                 return true;
+            }
+
+            return _blockCallerByDefault;
+        }
+
+        private bool BlockCaller(InterfaceMethod method)
+        {
+            if (method.Info.Name.StartsWith("get_") ||
+                method.Info.Name.StartsWith("set_"))
+            {
+                var property = method.InterfaceType.GetProperty(
+                    method.Info.Name.Substring(4));
+
+                if (BlockCaller(property))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+                {
+                    return true;
+                }
+
+                if (Attribute.GetCustomAttribute(method.Info, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+                {
+                    return true;
+                }
             }
 
             if (Attribute.GetCustomAttribute(method.InterfaceType, typeof(BlockCallerAttribute)) is BlockCallerAttribute)
@@ -210,31 +242,45 @@ namespace ServiceActor
             return true;
         }
 
-        //private bool KeepAsyncContext(PropertyInfo propertyInfo)
-        //{
-        //    if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
-        //    {
-        //        return keepAsyncContextAttributeOfActualType.KeepContext;
-        //    }
-
-        //    if (Attribute.GetCustomAttribute(propertyInfo, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
-        //    {
-        //        return keepAsyncContextAttribute.KeepContext;
-        //    }
-
-        //    return _keepAsyncContextByDefault;
-        //}
-
-        private bool KeepAsyncContext(InterfaceMethod method)
+        private bool KeepAsyncContext(PropertyInfo propertyInfo)
         {
-            if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
             {
                 return keepAsyncContextAttributeOfActualType.KeepContext;
             }
 
-            if (Attribute.GetCustomAttribute(method.Info, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
+            if (Attribute.GetCustomAttribute(propertyInfo, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
             {
                 return keepAsyncContextAttribute.KeepContext;
+            }
+
+            return _keepAsyncContextByDefault;
+        }
+
+        private bool KeepAsyncContext(InterfaceMethod method)
+        {
+            if (method.Info.Name.StartsWith("get_") ||
+                method.Info.Name.StartsWith("set_"))
+            {
+                var property = method.InterfaceType.GetProperty(
+                    method.Info.Name.Substring(4));
+
+                if (KeepAsyncContext(property))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (Attribute.GetCustomAttribute(GetActualTypeMappedMethod(method), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
+                {
+                    return keepAsyncContextAttributeOfActualType.KeepContext;
+                }
+
+                if (Attribute.GetCustomAttribute(method.Info, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttribute)
+                {
+                    return keepAsyncContextAttribute.KeepContext;
+                }
             }
 
             if (Attribute.GetCustomAttribute(method.InterfaceType, typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfInterfaceType)
