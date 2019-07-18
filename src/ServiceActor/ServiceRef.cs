@@ -27,6 +27,9 @@ namespace ServiceActor
 
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
 
+        public static T Create<T>(T objectToWrap, object aggregateKey = null) where T : class
+            => CreateFor<T>(objectToWrap, aggregateKey);
+
         /// <summary>
         /// Get or create a synchronization wrapper around <paramref name="objectToWrap"/>
         /// </summary>
@@ -34,30 +37,36 @@ namespace ServiceActor
         /// <param name="objectToWrap">Actual implementation type of the service</param>
         /// <param name="aggregateKey">Optional aggregation key to use in place of the <see cref="ServiceDomainAttribute"/> attribute</param>
         /// <returns>Synchronization wrapper object that implements <typeparamref name="T"/></returns>
-        public static T Create<T>(T objectToWrap, object aggregateKey = null) where T : class
+        public static T CreateFor<T>(object objectToWrap, object aggregateKey = null) where T : class
         {
             if (objectToWrap == null)
             {
                 throw new ArgumentNullException(nameof(objectToWrap));
             }
 
+            var serviceType = typeof(T);
+
             if (objectToWrap is IServiceActorWrapper)
             {
                 //objectToWrap is already a wrapper
                 //test if it's the right interface
                 if (objectToWrap is T)
+                {
                     return (T)objectToWrap;
+                }
 
-                throw new ArgumentException($"Parameter is already a wrapper but not for interface '{typeof(T)}'", nameof(objectToWrap));
+                objectToWrap = ((IServiceActorWrapper)objectToWrap).WrappedObject;
+                //throw new ArgumentException($"Parameter is already a wrapper but not for interface '{serviceType}'", nameof(objectToWrap));
             }
 
             //NOTE: Do not use AddOrUpdate() to avoid _wrapperCache lock while generating wrapper
 
             ActionQueue actionQueue = null;
             object wrapper;
+
             if (_wrappersCache.TryGetValue(objectToWrap, out var wrapperTypes))
             {
-                if (wrapperTypes.TryGetValue(typeof(T), out wrapper))
+                if (wrapperTypes.TryGetValue(serviceType, out wrapper))
                     return (T)wrapper;
 
                 var firstWrapper = wrapperTypes.First().Value;
@@ -65,18 +74,13 @@ namespace ServiceActor
                 actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
             }
 
-            actionQueue = actionQueue ?? GetActionQueueFor(typeof(T), aggregateKey);
+            actionQueue = actionQueue ?? GetActionQueueFor(serviceType, aggregateKey);
 
-            //var script = GetOrCreateScript<T>(objectToWrap.GetType());
-
-            //var scriptState = script.RunAsync(new ScriptGlobals { ObjectToWrap = objectToWrap, ActionQueueToShare = actionQueue }).Result;
-
-            //wrapper = scriptState.ReturnValue;
-            wrapper = GetOrCreateWrapper(typeof(T), objectToWrap, actionQueue);
+            wrapper = GetOrCreateWrapper(serviceType, objectToWrap, actionQueue);
 
             wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<Type, object>());
 
-            wrapperTypes.TryAdd(typeof(T), wrapper);
+            wrapperTypes.TryAdd(serviceType, wrapper);
 
             return (T)wrapper;
         }
@@ -335,5 +339,23 @@ namespace ServiceActor
 
             return new ActionQueue();
         }
+
+        //public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
+        //{
+        //    if (wrapper is IServiceActorWrapper serviceActorWrapper)
+        //    {
+        //        wrappedObject = (T)serviceActorWrapper.WrappedObject;
+        //        return true;
+        //    }
+
+        //    if (wrapper is T)
+        //    {
+        //        wrappedObject = (T)wrapper;
+        //        return true;
+        //    }
+
+        //    wrappedObject = null;
+        //    return false;
+        //}
     }
 }
