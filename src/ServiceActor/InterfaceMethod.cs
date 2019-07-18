@@ -18,8 +18,7 @@ namespace ServiceActor
 
         public override bool Equals(object obj)
         {
-            var method = obj as InterfaceMethod;
-            return method != null &&
+            return obj is InterfaceMethod method &&
                    EqualityComparer<Type>.Default.Equals(InterfaceType, method.InterfaceType) &&
                    EqualityComparer<MethodInfo>.Default.Equals(Info, method.Info);
         }

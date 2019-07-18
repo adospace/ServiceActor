@@ -32,7 +32,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
         <# if (property.CanRead) { #>
         get
         {
-            <# if (PropertyGetAllowsConcurrentAccess(property)) { #>
+            <# if (MethodAllowsConcurrentAccess(property.GetAccessor)) { #>
 
             return _objectToWrap.<#= property.Name #>;
 
@@ -51,7 +51,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     exceptionThrown = ex;
                 }
 
-            }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
+            }, <#= KeepAsyncContext(property.GetAccessor) ? "true" : "false" #>);
 
             invocationItem?.WaitExecuted();
 
@@ -71,13 +71,13 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
         <# if (property.CanWrite) { #>
         set
         {
-            <# if (PropertySetAllowsConcurrentAccess(property)) { #>
+            <# if (MethodAllowsConcurrentAccess(property.SetAccessor)) { #>
 
             _objectToWrap.<#= property.Name #> = value;
 
             <# } else { #>
 
-                <# if (BlockCaller(property)) { #>
+                <# if (BlockCaller(property.SetAccessor)) { #>
 
                 Exception exceptionThrown = null;
 
@@ -92,7 +92,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                         exceptionThrown = ex;
                     }
 
-                }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
+                }, <#= KeepAsyncContext(property.SetAccessor) ? "true" : "false" #>);
 
                 invocationItem?.WaitExecuted();
 
@@ -106,7 +106,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
                     _objectToWrap.<#= property.Name #> = value;
-                }, <#= KeepAsyncContext(property) ? "true" : "false" #>);
+                }, <#= KeepAsyncContext(property.SetAccessor) ? "true" : "false" #>);
 
                 <# } #>
 

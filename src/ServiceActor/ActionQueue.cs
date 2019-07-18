@@ -123,13 +123,23 @@ namespace ServiceActor
 
             public void WaitExecuted()
             {
-                _autoResetEvent.WaitOne();
+                //_autoResetEvent.WaitOne();
+                if (!_autoResetEvent.WaitOne(30000))
+                {
+                    throw new InvalidOperationException();
+                }
             }
 
             public Task WaitExecutedAsync()
             {
                 return _asyncAutoResetEvent.WaitAsync();
             }
+
+            public override string ToString()
+            {
+                return $"{Target?.WrappedObject}({TypeOfObjectToWrap}) {Action.Method}";
+            }
+
         }
 
         public ActionQueue()

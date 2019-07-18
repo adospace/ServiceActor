@@ -106,7 +106,7 @@ namespace ServiceActor
             this.Write("        get\r\n        {\r\n            ");
             
             #line 35 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- if (PropertyGetAllowsConcurrentAccess(property)) { 
+ if (MethodAllowsConcurrentAccess(property.GetAccessor)) { 
             
             #line default
             #line hidden
@@ -145,7 +145,7 @@ namespace ServiceActor
                     "                  exceptionThrown = ex;\r\n                }\r\n\r\n            }, ");
             
             #line 54 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property.GetAccessor) ? "true" : "false"));
             
             #line default
             #line hidden
@@ -189,7 +189,7 @@ namespace ServiceActor
             this.Write("        set\r\n        {\r\n            ");
             
             #line 74 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- if (PropertySetAllowsConcurrentAccess(property)) { 
+ if (MethodAllowsConcurrentAccess(property.SetAccessor)) { 
             
             #line default
             #line hidden
@@ -210,7 +210,7 @@ namespace ServiceActor
             this.Write("\r\n                ");
             
             #line 80 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
- if (BlockCaller(property)) { 
+ if (BlockCaller(property.SetAccessor)) { 
             
             #line default
             #line hidden
@@ -229,7 +229,7 @@ namespace ServiceActor
                     "     }\r\n\r\n                }, ");
             
             #line 95 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property.SetAccessor) ? "true" : "false"));
             
             #line default
             #line hidden
@@ -253,7 +253,7 @@ namespace ServiceActor
             this.Write(" = value;\r\n                }, ");
             
             #line 109 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property) ? "true" : "false"));
+            this.Write(this.ToStringHelper.ToStringWithCulture(KeepAsyncContext(property.SetAccessor) ? "true" : "false"));
             
             #line default
             #line hidden

@@ -433,6 +433,7 @@ namespace ServiceActor.Tests
             }
         }
 
+
         [TestMethod]
         public void ServiceActorWithBlockingVoidCallOnActualTypeShouldWorkAsExpected()
         {
@@ -450,6 +451,43 @@ namespace ServiceActor.Tests
 
             //here we can be sure that both previous call has been invoked to the actual class
             Assert.AreEqual(2, private_counter_ref.Count);
+        }
+
+        [BlockCaller]
+        public interface IBlockingInterfaceAttribute
+        {
+            int Count { get; }
+
+            void BlockingIncrement();
+        }
+
+        private class BlockingInterfaceAttributeTestClass : IBlockingInterfaceAttribute
+        {
+            public int Count { get; private set; }
+
+            public void BlockingIncrement()
+            {
+                Count += 1;
+            }
+
+            public void NotBlockingIncrement()
+            {
+                Count += 1;
+            }
+        }
+
+
+        [TestMethod]
+        public void ServiceActorWithBlockingAttributeOnInterfaceShouldWorkAsExpected()
+        {
+            var private_counter_ref = new BlockingInterfaceAttributeTestClass();
+            var counter = ServiceRef.Create<IBlockingInterfaceAttribute>(private_counter_ref);
+
+            Assert.AreEqual(0, private_counter_ref.Count);
+
+            counter.BlockingIncrement();
+
+            Assert.AreEqual(1, private_counter_ref.Count);
         }
 
         public interface IAsyncCounter
