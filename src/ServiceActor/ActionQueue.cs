@@ -15,6 +15,21 @@ namespace ServiceActor
         private int? _executingActionThreadId;
         private InvocationItem _executingInvocationItem;
 
+        private static int _callTimeout = 30000;
+        public static int CallTimeout
+        {
+            get => _callTimeout;
+            set
+            {
+                if (value != Timeout.Infinite && value < 0)
+                {
+                    throw new ArgumentException("Invalid value");
+                }
+
+                _callTimeout = value == 0 ? Timeout.Infinite : value;
+            }
+        }
+
         public class InvocationItem
         {
             private readonly AutoResetEvent _autoResetEvent;
@@ -123,8 +138,11 @@ namespace ServiceActor
 
             public void WaitExecuted()
             {
-                //_autoResetEvent.WaitOne();
-                if (!_autoResetEvent.WaitOne(30000))
+                if (ActionQueue.CallTimeout == Timeout.Infinite)
+                {
+                    _autoResetEvent.WaitOne();
+                }
+                else if (!_autoResetEvent.WaitOne(ActionQueue.CallTimeout))
                 {
                     throw new TimeoutException();
                 }
