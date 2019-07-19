@@ -453,6 +453,22 @@ namespace ServiceActor.Tests
             Assert.AreEqual(2, private_counter_ref.Count);
         }
 
+        [TestMethod]
+        public void ServiceActorWithBlockingVoidWaitingForCallCompletionShouldWorkAsDesigned()
+        {
+            //keep a reference to the actual implementation class just to be able to 
+            //read the Count property without pass thru the wrapper
+            var private_counter_ref = new BlockingActualTypeTestCounter();
+            var counter = ServiceRef.Create<IBlockingActualTypeTestCounter>(private_counter_ref);
+
+            counter.NotBlockingIncrement();
+
+            ServiceRef.WaitForCallQueueCompletion(counter);
+
+            //as the previous call is not blocking here the count is still 0 
+            Assert.AreEqual(1, private_counter_ref.Count);
+        }
+
         [BlockCaller]
         public interface IBlockingInterfaceAttribute
         {
@@ -619,5 +635,43 @@ namespace ServiceActor.Tests
             }
         }
 
+        //public interface ICircularDependencyServiceA
+        //{
+        //    bool TestProperty { get; }
+
+        //    bool MethodServiceA(ICircularDependencyServiceB serviceB);
+        //}
+
+        //public interface ICircularDependencyServiceB
+        //{
+        //    bool MethodServiceB(ICircularDependencyServiceA serviceA);
+        //}
+
+        //private class CircularDependencyServiceA : ICircularDependencyServiceA
+        //{
+        //    public bool TestProperty => true;
+
+        //    public bool MethodServiceA(ICircularDependencyServiceB serviceB)
+        //    {
+        //        return serviceB.MethodServiceB(ServiceRef.Create<ICircularDependencyServiceA>(this));
+        //    }
+        //}
+
+        //private class CircularDependencyServiceB : ICircularDependencyServiceB
+        //{
+        //    public bool MethodServiceB(ICircularDependencyServiceA serviceA)
+        //    {
+        //        return serviceA.TestProperty;
+        //    }
+        //}
+
+        //[TestMethod]
+        //public void TestCircularDependency()
+        //{
+        //    var serviceA = ServiceRef.Create<ICircularDependencyServiceA>(new CircularDependencyServiceA());
+        //    var serviceB = ServiceRef.Create<ICircularDependencyServiceB>(new CircularDependencyServiceB());
+
+        //    Assert.ThrowsException<InvalidOperationException>(() => serviceA.MethodServiceA(serviceB));
+        //}
     }
 }

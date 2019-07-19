@@ -567,7 +567,7 @@ namespace ServiceActor
             
             #line default
             #line hidden
-            this.Write("\r\n\r\n            return res;\r\n            ");
+            this.Write(";\r\n\r\n            return res;\r\n            ");
             
             #line 244 "C:\Users\adosp\Source\Repos\ServiceActor\src\ServiceActor\ServiceActorWrapperTemplate.tt"
  } else { 

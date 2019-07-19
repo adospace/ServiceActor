@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ServiceActor
 {
@@ -270,6 +272,64 @@ namespace ServiceActor
             actionQueue.Enqueue(actionToExecute);
         }
 
+        /// <summary>
+        /// Wait that call queue for a service is completed; i.e. all pending calls for the service are executed
+        /// </summary>
+        /// <param name="serviceObject">Service object whose call queue has to be awaited</param>
+        /// <param name="millisecondsTimeout">Timeout while wait for completion</param>
+        /// <returns>True if call queue has been completed</returns>
+        /// <remarks>This function has to be considered as an helper while testing services.</remarks>
+        public static bool WaitForCallQueueCompletion(object serviceObject, int millisecondsTimeout = 0)
+        {
+            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
+
+            if (serviceObject == null)
+            {
+                throw new ArgumentException("Service object argument is not a wrapper for a service");
+            }
+
+            var completionEvent = new AutoResetEvent(false);
+
+            serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
+
+            if (millisecondsTimeout > 0)
+            {
+                return completionEvent.WaitOne(millisecondsTimeout);
+            }
+
+            completionEvent.WaitOne();
+            return true;
+        }
+
+        /// <summary>
+        /// Async wait for a call queue to a service to complete
+        /// </summary>
+        /// <param name="serviceObject">Service object to wait call queue completion</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns></returns>
+        /// <remarks>This an helper function useful while testing services</remarks>
+        public static Task WaitForCallQueueCompletionAsync(object serviceObject, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
+
+            if (serviceObject == null)
+            {
+                throw new ArgumentException("Service object argument is not a wrapper for a service");
+            }
+
+            var completionEvent = new AsyncAutoResetEvent(false);
+
+            serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
+
+            if (cancellationToken != default(CancellationToken))
+            {
+                return completionEvent.WaitAsync(cancellationToken);
+            }
+            else
+            {
+                return completionEvent.WaitAsync();
+            }
+        }
         #region Pending Operation
 
         #region Pending Operations

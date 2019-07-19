@@ -238,7 +238,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
         {
             <# if (MethodAllowsConcurrentAccess(method)) { #>
 
-            var res = _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>
+            var res = _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
 
             return res;
             <# } else { #>
