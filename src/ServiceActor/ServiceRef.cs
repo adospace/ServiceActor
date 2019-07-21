@@ -388,13 +388,14 @@ namespace ServiceActor
         {
             if (aggregateKey != null)
             {
-                if (_queuesCache.TryGetValue(aggregateKey, out var actionQueue))
-                    return actionQueue;
+                return _queuesCache.AddOrUpdate(aggregateKey,
+                    new ActionQueue(), (key, oldValue) => oldValue);
             }
 
             if (Attribute.GetCustomAttribute(typeToWrap, typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
             {
-                return _queuesCache.AddOrUpdate(serviceDomain.DomainKey, new ActionQueue(), (key, oldValue) => oldValue);
+                return _queuesCache.AddOrUpdate(serviceDomain.DomainKey, 
+                    new ActionQueue(), (key, oldValue) => oldValue);
             }
 
             return new ActionQueue();

@@ -290,5 +290,16 @@ namespace ServiceActor
 
             return _keepAsyncContextByDefault;
         }
+
+        private string AllowReentrantCalls(Type type)
+        {
+            if (Attribute.GetCustomAttribute(type, typeof(AllowReentrantCallsAttribute)) is AllowReentrantCallsAttribute allowReentrantCallsAttribute)
+            {
+                return allowReentrantCallsAttribute.Allow.ToString().ToLower();
+            }
+
+            return "true";
+        }
+
     }
 }

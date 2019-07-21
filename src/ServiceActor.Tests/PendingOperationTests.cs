@@ -210,7 +210,7 @@ namespace ServiceActor.Tests
                 //simulate image download
                 var downloadedEvent = new AutoResetEvent(false);
                 Console.WriteLine($"Downloading {url}");
-                Task.Delay(5000).ContinueWith(_=> 
+                Task.Delay(10000).ContinueWith(_=> 
                 {
                     Console.WriteLine($"Downloaded {url}");
                     _images.Add(new ImageStuff() { Url = url, Data = new byte[] { 0x01 } });

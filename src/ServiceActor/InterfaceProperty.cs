@@ -17,7 +17,8 @@ namespace ServiceActor
 
         public InterfaceMethod GetAccessor { get; }
         public InterfaceMethod SetAccessor { get; }
-
+        public Type InterfaceType => GetAccessor?.InterfaceType ??
+            SetAccessor?.InterfaceType;
 
         public string Name => GetAccessor?.Info.Name.Substring(4) ?? 
             SetAccessor?.Info.Name.Substring(4);

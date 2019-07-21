@@ -635,43 +635,88 @@ namespace ServiceActor.Tests
             }
         }
 
-        //public interface ICircularDependencyServiceA
-        //{
-        //    bool TestProperty { get; }
+        [AllowReentrantCalls(false)]
+        public interface ICircularDependencyServiceA
+        {
+            bool TestProperty { get; }
 
-        //    bool MethodServiceA(ICircularDependencyServiceB serviceB);
-        //}
+            bool MethodServiceA(ICircularDependencyServiceB serviceB);
+        }
 
-        //public interface ICircularDependencyServiceB
-        //{
-        //    bool MethodServiceB(ICircularDependencyServiceA serviceA);
-        //}
+        public interface ICircularDependencyServiceB
+        {
+            bool MethodServiceB(ICircularDependencyServiceA serviceA);
+        }
 
-        //private class CircularDependencyServiceA : ICircularDependencyServiceA
-        //{
-        //    public bool TestProperty => true;
+        private class CircularDependencyServiceA : ICircularDependencyServiceA
+        {
+            public bool TestProperty => true;
 
-        //    public bool MethodServiceA(ICircularDependencyServiceB serviceB)
-        //    {
-        //        return serviceB.MethodServiceB(ServiceRef.Create<ICircularDependencyServiceA>(this));
-        //    }
-        //}
+            public bool MethodServiceA(ICircularDependencyServiceB serviceB)
+            {
+                return serviceB.MethodServiceB(ServiceRef.Create<ICircularDependencyServiceA>(this));
+            }
+        }
 
-        //private class CircularDependencyServiceB : ICircularDependencyServiceB
-        //{
-        //    public bool MethodServiceB(ICircularDependencyServiceA serviceA)
-        //    {
-        //        return serviceA.TestProperty;
-        //    }
-        //}
+        private class CircularDependencyServiceB : ICircularDependencyServiceB
+        {
+            public bool MethodServiceB(ICircularDependencyServiceA serviceA)
+            {
+                return serviceA.TestProperty;
+            }
+        }
 
-        //[TestMethod]
-        //public void TestCircularDependency()
-        //{
-        //    var serviceA = ServiceRef.Create<ICircularDependencyServiceA>(new CircularDependencyServiceA());
-        //    var serviceB = ServiceRef.Create<ICircularDependencyServiceB>(new CircularDependencyServiceB());
+        [TestMethod]
+        public void TestCircularDependency()
+        {
+            var serviceA = ServiceRef.Create<ICircularDependencyServiceA>(new CircularDependencyServiceA());
+            var serviceB = ServiceRef.Create<ICircularDependencyServiceB>(new CircularDependencyServiceB());
 
-        //    Assert.ThrowsException<InvalidOperationException>(() => serviceA.MethodServiceA(serviceB));
-        //}
+            Assert.ThrowsException<InvalidOperationException>(() => serviceA.MethodServiceA(serviceB));
+        }
+
+        public interface IAllowReentrantServiceA
+        {
+            bool TestProperty { get; set; }
+
+            void MethodServiceA(IAllowReentrantServiceB serviceB);
+        }
+
+        public interface IAllowReentrantServiceB
+        {
+            void MethodServiceB(IAllowReentrantServiceA serviceA);
+        }
+
+        private class AllowReentrantServiceA : IAllowReentrantServiceA
+        {
+            public bool TestProperty { get; set; }
+
+            public void MethodServiceA(IAllowReentrantServiceB serviceB)
+            {
+                serviceB.MethodServiceB(ServiceRef.Create<IAllowReentrantServiceA>(this));
+            }
+        }
+
+        private class AllowReentrantServiceB : IAllowReentrantServiceB
+        {
+            public void MethodServiceB(IAllowReentrantServiceA serviceA)
+            {
+                serviceA.TestProperty = true;
+            }
+        }
+
+        [TestMethod]
+        public void TestAllowReentrantServices()
+        {
+            var serviceA = ServiceRef.Create<IAllowReentrantServiceA>(new AllowReentrantServiceA());
+            var serviceB = ServiceRef.Create<IAllowReentrantServiceB>(new AllowReentrantServiceB());
+
+            serviceA.MethodServiceA(serviceB);
+
+            ServiceRef.WaitForCallQueueCompletion(serviceA);
+            ServiceRef.WaitForCallQueueCompletion(serviceB);
+
+            Assert.IsTrue(serviceA.TestProperty);
+        }
     }
 }
