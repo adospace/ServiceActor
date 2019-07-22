@@ -1,7 +1,7 @@
 # ServiceActor
 This is a .NET library that implements a basic actor model to handle concurrent access to services
 
-[![Build status](https://ci.appveyor.com/api/projects/status/ip4lahn844gqfa8d?svg=true)](https://ci.appveyor.com/project/adospace/serviceactor) [![Nuget](https://img.shields.io/nuget/v/serviceactor.svg)](https://www.nuget.org/packages/ServiceActor)
+[![Build status](https://ci.appveyor.com/api/projects/status/ip4lahn844gqfa8d?svg=true)](https://ci.appveyor.com/project/adospace/serviceactor) [![Nuget](https://img.shields.io/nuget/v/serviceactor.svg)](https://www.nuget.org/packages/ServiceActor) [![Join the chat at https://gitter.im/ServiceActor/community](https://badges.gitter.im/ServiceActor/community.svg)](https://gitter.im/ServiceActor/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # 
 
