@@ -17,12 +17,15 @@ namespace ServiceActor
             IServiceActorWrapper target,
             string typeOfObjectToWrap,
             bool keepContextForAsyncCalls = true,
-            bool async = false)
+            bool async = false,
+            bool blockingCaller = true)
         {
             Action = action;
             Target = target;
             TypeOfObjectToWrap = typeOfObjectToWrap;
             KeepContextForAsyncCalls = keepContextForAsyncCalls;
+            BlockingCaller = blockingCaller;
+
             if (async)
             {
                 _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
@@ -36,10 +39,13 @@ namespace ServiceActor
         public InvocationItem(
             Action action,
             bool keepContextForAsyncCalls = true,
-            bool async = false)
+            bool async = false,
+            bool blockingCaller = true)
         {
             Action = action;
             KeepContextForAsyncCalls = keepContextForAsyncCalls;
+            BlockingCaller = blockingCaller;
+
             if (async)
             {
                 _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
@@ -63,11 +69,19 @@ namespace ServiceActor
         public string TypeOfObjectToWrap { get; private set; }
 
         public bool KeepContextForAsyncCalls { get; private set; }
+        public bool BlockingCaller { get; }
 
         private readonly Queue<IPendingOperation> _pendingOperations = new Queue<IPendingOperation>();
 
-        public void EnqueuePendingOperation(IPendingOperation pendingOperation) => 
+        public void EnqueuePendingOperation(IPendingOperation pendingOperation)
+        {
+            if (!BlockingCaller)
+            {
+                throw new InvalidOperationException("Unable to register a pending operation for a method not marked with BlockCaller attribute");
+            }
+
             _pendingOperations.Enqueue(pendingOperation);
+        }
 
         public bool WaitForPendingOperationCompletion()
         {
@@ -94,7 +108,7 @@ namespace ServiceActor
 
             if (lastPendingOperationWithResult == null)
             {
-                    var lastPendingOperation = _pendingOperations
+                var lastPendingOperation = _pendingOperations
                     .LastOrDefault();
 
                 if (lastPendingOperation == null)

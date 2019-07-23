@@ -18,7 +18,7 @@ namespace ServiceActor
                                                                       //_callStack.Peek() != actionQueue;
             if (!allowReentrantCalls && actionQueueInStack)
             {
-                throw new InvalidOperationException("Reentrant call detected");
+                throw new InvalidOperationException($"Reentrant call detected {string.Join(">>", _callStack.Select(_ => _.ExecutingInvocationItem))}");
             }
 
             if (actionQueueInStack)

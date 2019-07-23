@@ -12,7 +12,9 @@ namespace ServiceActor
         private int? _executingActionThreadId;
         private InvocationItem _executingInvocationItem;
 
-        private static int _callTimeout = 30000;
+        public InvocationItem ExecutingInvocationItem => _executingInvocationItem;
+
+        private static int _callTimeout = Timeout.Infinite;
         public static int CallTimeout
         {
             get => _callTimeout;
@@ -80,7 +82,12 @@ namespace ServiceActor
             _actionQueue.Complete();
         }
 
-        public InvocationItem Enqueue(IServiceActorWrapper target, string typeOfObjectToWrap, Action action, bool keepContextForAsyncCalls = true, bool asyncEvent = false)
+        public InvocationItem Enqueue(IServiceActorWrapper target, 
+            string typeOfObjectToWrap, 
+            Action action, 
+            bool keepContextForAsyncCalls = true, 
+            bool asyncEvent = false,
+            bool blockingCaller = true)
         {
             if (target == null)
             {
@@ -109,14 +116,18 @@ namespace ServiceActor
                 target,
                 typeOfObjectToWrap,
                 keepContextForAsyncCalls,
-                asyncEvent);
+                asyncEvent,
+                blockingCaller);
 
             _actionQueue.Post(invocationItem);
 
             return invocationItem;
         }
 
-        public InvocationItem Enqueue(Action action, bool keepContextForAsyncCalls = true, bool asyncEvent = false)
+        public InvocationItem Enqueue(Action action, 
+            bool keepContextForAsyncCalls = true, 
+            bool asyncEvent = false, 
+            bool blockingCaller = true)
         {
             if (action == null)
             {
@@ -133,7 +144,8 @@ namespace ServiceActor
             var invocationItem = new InvocationItem(
                 action,
                 keepContextForAsyncCalls,
-                asyncEvent
+                asyncEvent,
+                blockingCaller
             );
 
             _actionQueue.Post(invocationItem);

@@ -60,11 +60,10 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 callContext.Pop(ActionQueue);
 
-            }, <#= KeepAsyncContext(property.GetAccessor) ? "true" : "false" #>);
+            }, 
+            keepContextForAsyncCalls: <#= KeepAsyncContext(property.GetAccessor) ? "true" : "false" #>);
 
             invocationItem?.WaitExecuted();
-
-            //CallContext.ResetCurrentContextIfEmpty();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
@@ -88,9 +87,6 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
             <# } else { #>
 
-                <# if (BlockCaller(property.SetAccessor)) { #>
-
-                Exception exceptionThrown = null;
                 var callContext = CallContext.GetOrCreateCurrent();
                 if (!callContext.CanPush(ActionQueue, <#= AllowReentrantCalls(property.InterfaceType) #>))
                 {
@@ -98,12 +94,13 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     return;
                 }
 
+                Exception exceptionThrown = null;
                 var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
+                    CallContext.SetCurrent(callContext);
+                    callContext.Push(ActionQueue);
                     try
                     {
-                        CallContext.SetCurrent(callContext);
-                        callContext.Push(ActionQueue);
                         _objectToWrap.<#= property.Name #> = value;
                     }
                     catch (Exception ex)
@@ -112,41 +109,19 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     }
 
                     callContext.Pop(ActionQueue);
+                }, 
+                keepContextForAsyncCalls: <#= KeepAsyncContext(property.SetAccessor) ? "true" : "false" #>,
+                blockingCaller: <#= BlockCaller(property.SetAccessor) ? "true" : "false" #>);
 
-                }, <#= KeepAsyncContext(property.SetAccessor) ? "true" : "false" #>);
-
+                <# if (BlockCaller(property.SetAccessor)) { #>
                 invocationItem?.WaitExecuted();
-
-                //CallContext.ResetCurrentContextIfEmpty();
 
                 if (exceptionThrown != null)
                     throw exceptionThrown;
 
                 invocationItem?.WaitForPendingOperationCompletion();
-
-                <# } else { #>
-                var callContext = CallContext.GetOrCreateCurrent();
-                if (!callContext.CanPush(ActionQueue, <#= AllowReentrantCalls(property.InterfaceType) #>))
-                {
-                    _objectToWrap.<#= property.Name #> = value;
-                    return;
-                }
-
-                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
-                {
-                    CallContext.SetCurrent(callContext);
-                    callContext.Push(ActionQueue);
-                    try
-                    {
-                        _objectToWrap.<#= property.Name #> = value;
-                    }
-                    finally
-                    {
-                        callContext.Pop(ActionQueue);
-                    }
-                }, <#= KeepAsyncContext(property.SetAccessor) ? "true" : "false" #>);
-
                 <# } #>
+
 
             <# } #>
         }
@@ -172,16 +147,15 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     return;
                 }
 
-                <# if (BlockCaller(method)) { #>
-
                 Exception exceptionThrown = null;
 
                 var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
+                    CallContext.SetCurrent(callContext);
+                    callContext.Push(ActionQueue);
+
                     try
                     {
-                        CallContext.SetCurrent(callContext);
-                        callContext.Push(ActionQueue);
                         _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                     }
                     catch (Exception ex)
@@ -189,37 +163,19 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                         exceptionThrown = ex;
                     }
 
-                    callContext.Pop(ActionQueue);
+                }, 
+                keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>,
+                blockingCaller: <#= BlockCaller(method) ? "true" : "false" #> );
 
-                }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
-
+                <# if (BlockCaller(method)) { #>
                 invocationItem?.WaitExecuted();
-
-                //CallContext.ResetCurrentContextIfEmpty();
 
                 if (exceptionThrown != null)
                     throw exceptionThrown;
 
                 invocationItem?.WaitForPendingOperationCompletion();
-
-                <# } else { #>
-
-                ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
-                {
-                    CallContext.SetCurrent(callContext);
-                    callContext.Push(ActionQueue);
-                    try
-                    {
-                        _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
-                    }
-                    finally
-                    {
-                        callContext.Pop(ActionQueue);
-                    }
-
-                }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
-
                 <# } #>
+
 
             <# } #>
         }
@@ -255,11 +211,11 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 callContext.Pop(ActionQueue);
 
-            }, <#= KeepAsyncContext(method) ? "true" : "false" #>, true);
+            }, 
+            keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>, 
+            asyncEvent: true);
 
             await invocationItem?.WaitExecutedAsync();
-
-            //CallContext.ResetCurrentContextIfEmpty();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
@@ -303,11 +259,11 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 callContext.Pop(ActionQueue);
 
-            }, <#= KeepAsyncContext(method) ? "true" : "false" #>, true);
+            }, 
+            keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>, 
+            asyncEvent: true);
 
             await invocationItem?.WaitExecutedAsync();
-
-            //CallContext.ResetCurrentContextIfEmpty();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
@@ -353,11 +309,10 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
 
                 callContext.Pop(ActionQueue);
 
-            }, <#= KeepAsyncContext(method) ? "true" : "false" #>);
+            }, 
+            keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
             invocationItem?.WaitExecuted();
-
-            //CallContext.ResetCurrentContextIfEmpty();
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
