@@ -1,7 +1,7 @@
 # ServiceActor
 This is a .NET library that implements a basic actor model to handle concurrent access to services
 
-[![Build status](https://ci.appveyor.com/api/projects/status/ip4lahn844gqfa8d?svg=true)](https://ci.appveyor.com/project/adospace/serviceactor) [![Nuget](https://img.shields.io/nuget/v/serviceactor.svg)](https://www.nuget.org/packages/ServiceActor)
+[![Build status](https://ci.appveyor.com/api/projects/status/ip4lahn844gqfa8d?svg=true)](https://ci.appveyor.com/project/adospace/serviceactor) [![Nuget](https://img.shields.io/nuget/v/serviceactor.svg)](https://www.nuget.org/packages/ServiceActor) [![Gitter](https://badges.gitter.im/ServiceActor/community.svg)](https://gitter.im/ServiceActor/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 # 
 
@@ -9,7 +9,7 @@ This is a .NET library that implements a basic actor model to handle concurrent 
 ServiceActor goal is to simplify multithreading/concurrent access to services using an Actor-like model without requiring the project to be completely rewritten or designed from the start using an Actor model paradigm. 
 
 ### What ServiceActor is not
-ServiceActor doesn't aim to be a full Actor model like Akka.Net or Orleans: actually it can be even compared to those frameworks! So if you're looking for a pure Actor model infrastructure I would point you to one of those frameworks.
+ServiceActor doesn't aim to be a full Actor model like Akka.Net or Orleans: actually it can't be even compared to those frameworks! So if you're looking for a pure Actor model infrastructure I would point you to one of those frameworks.
 
 ### Main ServiceActor goals
 - Makes concurrent access to services lock-free and straightforward
