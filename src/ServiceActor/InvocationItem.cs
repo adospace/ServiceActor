@@ -17,43 +17,59 @@ namespace ServiceActor
             IServiceActorWrapper target,
             string typeOfObjectToWrap,
             bool keepContextForAsyncCalls = true,
-            bool async = false,
             bool blockingCaller = true)
         {
             Action = action;
             Target = target;
             TypeOfObjectToWrap = typeOfObjectToWrap;
             KeepContextForAsyncCalls = keepContextForAsyncCalls;
+            Async = false;
             BlockingCaller = blockingCaller;
 
-            if (async)
-            {
-                _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
-            }
-            else
-            {
-                _autoResetEvent = new AutoResetEvent(false);
-            }
+            _autoResetEvent = new AutoResetEvent(false);
         }
 
         public InvocationItem(
             Action action,
             bool keepContextForAsyncCalls = true,
-            bool async = false,
             bool blockingCaller = true)
         {
             Action = action;
             KeepContextForAsyncCalls = keepContextForAsyncCalls;
+            Async = false;
             BlockingCaller = blockingCaller;
 
-            if (async)
-            {
-                _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
-            }
-            else
-            {
-                _autoResetEvent = new AutoResetEvent(false);
-            }
+            _autoResetEvent = new AutoResetEvent(false);
+        }
+
+        public InvocationItem(
+            Func<Task> action,
+            IServiceActorWrapper target,
+            string typeOfObjectToWrap,
+            bool keepContextForAsyncCalls = true,
+            bool blockingCaller = true)
+        {
+            ActionAsync = action;
+            Target = target;
+            TypeOfObjectToWrap = typeOfObjectToWrap;
+            KeepContextForAsyncCalls = keepContextForAsyncCalls;
+            Async = true;
+            BlockingCaller = blockingCaller;
+
+            _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
+        }
+
+        public InvocationItem(
+            Func<Task> action,
+            bool keepContextForAsyncCalls = true,
+            bool blockingCaller = true)
+        {
+            ActionAsync = action;
+            KeepContextForAsyncCalls = keepContextForAsyncCalls;
+            Async = true;
+            BlockingCaller = blockingCaller;
+
+            _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
         }
 
         internal void SignalExecuted()
@@ -64,11 +80,14 @@ namespace ServiceActor
 
         public Action Action { get; private set; }
 
+        public Func<Task> ActionAsync { get; private set; }
+
         public IServiceActorWrapper Target { get; private set; }
 
         public string TypeOfObjectToWrap { get; private set; }
 
         public bool KeepContextForAsyncCalls { get; private set; }
+        public bool Async { get; }
         public bool BlockingCaller { get; }
 
         private readonly Queue<IPendingOperation> _pendingOperations = new Queue<IPendingOperation>();
@@ -113,7 +132,7 @@ namespace ServiceActor
 
                 if (lastPendingOperation == null)
                 {
-                    return default(T);
+                    return default;
                 }
 
                 if (typeof(T) == typeof(bool))
@@ -121,7 +140,7 @@ namespace ServiceActor
                     return (T)(object)true;
                 }
 
-                return default(T);
+                return default;
             }
 
             return (T)lastPendingOperationWithResult.GetResult();
@@ -146,7 +165,7 @@ namespace ServiceActor
 
         public override string ToString()
         {
-            return $"{Target?.WrappedObject}({TypeOfObjectToWrap}) {Action.Method}";
+            return $"{Target?.WrappedObject}({TypeOfObjectToWrap}) {Action?.Method ?? ActionAsync?.Method}";
         }
 
     }

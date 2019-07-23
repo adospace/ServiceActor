@@ -94,11 +94,14 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     return;
                 }
 
+                <# if (BlockCaller(property.SetAccessor)) { #>
                 Exception exceptionThrown = null;
+                <# } #>
                 var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
                     CallContext.SetCurrent(callContext);
                     callContext.Push(ActionQueue);
+                    <# if (BlockCaller(property.SetAccessor)) { #>
                     try
                     {
                         _objectToWrap.<#= property.Name #> = value;
@@ -109,6 +112,16 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     }
 
                     callContext.Pop(ActionQueue);
+                    <# } else { #>
+                    try
+                    {
+                        _objectToWrap.<#= property.Name #> = value;
+                    }
+                    finally
+                    {
+                        callContext.Pop(ActionQueue);
+                    }
+                    <# } #>
                 }, 
                 keepContextForAsyncCalls: <#= KeepAsyncContext(property.SetAccessor) ? "true" : "false" #>,
                 blockingCaller: <#= BlockCaller(property.SetAccessor) ? "true" : "false" #>);
@@ -147,13 +160,15 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     return;
                 }
 
+                <# if (BlockCaller(method)) { #>
                 Exception exceptionThrown = null;
+                <# } #>
 
                 var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, () =>
                 {
                     CallContext.SetCurrent(callContext);
                     callContext.Push(ActionQueue);
-
+                    <# if (BlockCaller(method)) { #>
                     try
                     {
                         _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
@@ -162,7 +177,19 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                     {
                         exceptionThrown = ex;
                     }
+                    
+                    callContext.Pop(ActionQueue);
 
+                    <# } else { #>
+                    try
+                    {
+                        _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
+                    }
+                    finally
+                    {
+                        callContext.Pop(ActionQueue);
+                    }
+                    <# } #>
                 }, 
                 keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>,
                 blockingCaller: <#= BlockCaller(method) ? "true" : "false" #> );
@@ -196,12 +223,13 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 return;
             }
 
-            var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, async () =>
+            var invocationItem = ActionQueue.EnqueueAsync(this, _typeOfObjectToWrap, async () =>
             {
+                CallContext.SetCurrent(callContext);
+                callContext.Push(ActionQueue);
+
                 try
                 {
-                    CallContext.SetCurrent(callContext);
-                    callContext.Push(ActionQueue);
                     await _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                 }
                 catch (Exception ex)
@@ -210,10 +238,8 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 }
 
                 callContext.Pop(ActionQueue);
-
             }, 
-            keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>, 
-            asyncEvent: true);
+            keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
             await invocationItem?.WaitExecutedAsync();
 
@@ -244,12 +270,13 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 return await _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
             }
 
-            var invocationItem = ActionQueue.Enqueue(this, _typeOfObjectToWrap, async () =>
+            var invocationItem = ActionQueue.EnqueueAsync(this, _typeOfObjectToWrap, async () =>
             {
+                CallContext.SetCurrent(callContext);
+                callContext.Push(ActionQueue);
+
                 try
                 {
-                    CallContext.SetCurrent(callContext);
-                    callContext.Push(ActionQueue);
                     res = await _objectToWrap.<#= method.Info.GetMethodInvocationCode() #>;
                 }
                 catch (Exception ex)
@@ -258,10 +285,8 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 }
 
                 callContext.Pop(ActionQueue);
-
             }, 
-            keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>, 
-            asyncEvent: true);
+            keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
             await invocationItem?.WaitExecutedAsync();
 

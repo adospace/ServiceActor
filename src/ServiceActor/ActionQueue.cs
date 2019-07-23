@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace ServiceActor
@@ -43,11 +44,20 @@ namespace ServiceActor
                         //System.Diagnostics.Debug.WriteLine($"-----Executing {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}...");
                         if (_actionCallMonitor != null)
                         {
-                            var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action);
+                            var callDetails = new CallDetails(
+                                this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
                             _actionCallMonitor?.EnterMethod(callDetails);
                         }
                         _executingInvocationItem = invocation;
-                        AsyncContext.Run(invocation.Action);
+
+                        if (invocation.Async)
+                        {
+                            AsyncContext.Run(async () => await invocation.ActionAsync());
+                        }
+                        else
+                        {
+                            AsyncContext.Run(invocation.Action);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -58,7 +68,7 @@ namespace ServiceActor
                     //System.Diagnostics.Debug.WriteLine($"-----Executed {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}");
                     if (_actionCallMonitor != null)
                     {
-                        var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action);
+                        var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
                         _actionCallMonitor?.ExitMethod(callDetails);
                     }
 
@@ -86,7 +96,6 @@ namespace ServiceActor
             string typeOfObjectToWrap, 
             Action action, 
             bool keepContextForAsyncCalls = true, 
-            bool asyncEvent = false,
             bool blockingCaller = true)
         {
             if (target == null)
@@ -116,7 +125,6 @@ namespace ServiceActor
                 target,
                 typeOfObjectToWrap,
                 keepContextForAsyncCalls,
-                asyncEvent,
                 blockingCaller);
 
             _actionQueue.Post(invocationItem);
@@ -126,7 +134,6 @@ namespace ServiceActor
 
         public InvocationItem Enqueue(Action action, 
             bool keepContextForAsyncCalls = true, 
-            bool asyncEvent = false, 
             bool blockingCaller = true)
         {
             if (action == null)
@@ -144,7 +151,73 @@ namespace ServiceActor
             var invocationItem = new InvocationItem(
                 action,
                 keepContextForAsyncCalls,
-                asyncEvent,
+                blockingCaller
+            );
+
+            _actionQueue.Post(invocationItem);
+
+            return invocationItem;
+        }
+
+        public InvocationItem EnqueueAsync(IServiceActorWrapper target,
+            string typeOfObjectToWrap,
+            Func<Task> action,
+            bool keepContextForAsyncCalls = true,
+            bool blockingCaller = true)
+        {
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+
+            if (typeOfObjectToWrap == null)
+            {
+                throw new ArgumentNullException(nameof(typeOfObjectToWrap));
+            }
+
+            if (action == null)
+            {
+                throw new ArgumentNullException(nameof(action));
+            }
+
+            if (Thread.CurrentThread.ManagedThreadId == _executingActionThreadId)
+            {
+                //if the calling thread is the same as the executing action thread then just pass thru
+                action();
+                return null;
+            }
+
+            var invocationItem = new InvocationItem(
+                action,
+                target,
+                typeOfObjectToWrap,
+                keepContextForAsyncCalls,
+                blockingCaller);
+
+            _actionQueue.Post(invocationItem);
+
+            return invocationItem;
+        }
+
+        public InvocationItem EnqueueAsync(Func<Task> action,
+            bool keepContextForAsyncCalls = true,
+            bool blockingCaller = true)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException(nameof(action));
+            }
+
+            if (Thread.CurrentThread.ManagedThreadId == _executingActionThreadId)
+            {
+                //if the calling thread is the same as the first executing action then just pass thru
+                action();
+                return _executingInvocationItem;
+            }
+
+            var invocationItem = new InvocationItem(
+                action,
+                keepContextForAsyncCalls,
                 blockingCaller
             );
 

@@ -187,7 +187,21 @@ namespace ServiceActor.Tests
         private class ImageServiceAsync : IImageService
         {
             private readonly List<ImageStuff> _images = new List<ImageStuff>();
-            public IList<ImageStuff> Images => _images.ToList();
+            public IList<ImageStuff> Images
+            {
+                get
+                {
+                    Console.WriteLine($"Getting images...");
+                    try
+                    {
+                        return _images.ToList();
+                    }
+                    finally
+                    {
+                        Console.WriteLine($"Getting images...completed");
+                    }
+                }
+            }
 
             public async Task GetOrDownloadAsync(string url)
             {
@@ -195,29 +209,53 @@ namespace ServiceActor.Tests
                 Console.WriteLine($"Downloading {url}");
                 await Task.Delay(1000);
                 Console.WriteLine($"Downloaded {url}");
-
+                Task.Delay(1000).Wait();
+                Console.WriteLine($"Adding to images {url}");
                 _images.Add(new ImageStuff() { Url = url, Data = new byte[] { 0x01 } });
+                Console.WriteLine($"Added to images {url}");
             }
         }
 
         private class ImageServiceWithPendingOperation : IImageService
         {
             private readonly List<ImageStuff> _images = new List<ImageStuff>();
-            public IList<ImageStuff> Images => _images.ToList();
+            public IList<ImageStuff> Images
+            {
+                get
+                {
+                    Console.WriteLine($"Getting images...");
+                    try
+                    {
+                        return _images.ToList();
+                    }
+                    finally
+                    {
+                        Console.WriteLine($"Getting images...completed");
+                    }
+                }
+            }
 
             public Task GetOrDownloadAsync(string url)
             {
                 //simulate image download
                 var downloadedEvent = new AutoResetEvent(false);
                 Console.WriteLine($"Downloading {url}");
-                Task.Delay(10000).ContinueWith(_=> 
+                Task.Delay(2000).ContinueWith(_=> 
                 {
                     Console.WriteLine($"Downloaded {url}");
-                    _images.Add(new ImageStuff() { Url = url, Data = new byte[] { 0x01 } });
                     downloadedEvent.Set();
                 });
 
-                ServiceRef.RegisterPendingOperation(this, downloadedEvent);
+                ServiceRef.RegisterPendingOperation(this, downloadedEvent, actionOnCompletion: (res)=> 
+                {
+                    //Accessing _images here would be risky, just wrap the call...
+                    ServiceRef.Call(this, () =>
+                    {
+                        Console.WriteLine($"Adding to images {url}");
+                        _images.Add(new ImageStuff() { Url = url, Data = new byte[] { 0x01 } });
+                        Console.WriteLine($"Added to images {url}");
+                    });
+                });
 
                 return Task.CompletedTask;
             }
