@@ -257,6 +257,11 @@ namespace ServiceActor
                 throw new ArgumentNullException(nameof(pendingOperation));
             }
 
+            if (_executingInvocationItem == null)
+            {
+                throw new InvalidOperationException("Seems that RegisterPendingOperations has been called outside of a service actor wrapper or from a method not wrapped. Also ensure that calling method/property is not decorated with a AllowConcurrentAccess attribute.");
+            }
+
             _executingInvocationItem.EnqueuePendingOperation(pendingOperation);
         }
 
