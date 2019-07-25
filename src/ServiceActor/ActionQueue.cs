@@ -45,7 +45,7 @@ namespace ServiceActor
                         if (_actionCallMonitor != null)
                         {
                             var callDetails = new CallDetails(
-                                this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
+                                this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.BlockingCaller, invocation.Action, invocation.ActionAsync);
                             _actionCallMonitor?.EnterMethod(callDetails);
                         }
                         _executingInvocationItem = invocation;
@@ -63,7 +63,7 @@ namespace ServiceActor
                     {
                         if (_actionCallMonitor != null)
                         {
-                            var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
+                            var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.BlockingCaller, invocation.Action, invocation.ActionAsync);
                             _actionCallMonitor?.UnhandledException(callDetails, ex);
                         }
                     }
@@ -72,7 +72,7 @@ namespace ServiceActor
                     //System.Diagnostics.Debug.WriteLine($"-----Executed {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}");
                     if (_actionCallMonitor != null)
                     {
-                        var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
+                        var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.BlockingCaller, invocation.Action, invocation.ActionAsync);
                         _actionCallMonitor?.ExitMethod(callDetails);
                     }
 
@@ -121,7 +121,7 @@ namespace ServiceActor
             {
                 //if the calling thread is the same as the executing action thread then just pass thru
                 action();
-                return null;
+                return _executingInvocationItem;
             }
 
             var invocationItem = new InvocationItem(

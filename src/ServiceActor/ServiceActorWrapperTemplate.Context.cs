@@ -32,7 +32,7 @@ namespace ServiceActor
         public Type TypeToWrap { get; }
         public Type TypeOfObjectToWrap { get; }
 
-        public string TypeToWrapName => TypeToWrap.Name.Replace('`', '_');
+        public string TypeToWrapName => TypeToWrap.Name.Replace('`', '_') + "_" + TypeOfObjectToWrap.Name.Replace('`', '_');
 
         public string TypeToWrapFullName => TypeToWrap.GetTypeReferenceCode();
         public string TypeOfObjectToWrapFullName => TypeOfObjectToWrap.GetTypeReferenceCode();

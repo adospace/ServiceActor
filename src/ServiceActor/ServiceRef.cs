@@ -25,7 +25,7 @@ namespace ServiceActor
         //    public ActionQueue ActionQueueToShare { get; set; }
         //}
 
-        private static readonly ConcurrentDictionary<object, ConcurrentDictionary<Type, object>> _wrappersCache = new ConcurrentDictionary<object, ConcurrentDictionary<Type, object>>();
+        private static readonly ConcurrentDictionary<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConcurrentDictionary<object, ConcurrentDictionary<(Type, Type), object>>();
 
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
 
@@ -65,10 +65,11 @@ namespace ServiceActor
 
             ActionQueue actionQueue = null;
             object wrapper;
+            var wrapperTypeKey = (serviceType, objectToWrap.GetType());
 
             if (_wrappersCache.TryGetValue(objectToWrap, out var wrapperTypes))
             {
-                if (wrapperTypes.TryGetValue(serviceType, out wrapper))
+                if (wrapperTypes.TryGetValue(wrapperTypeKey, out wrapper))
                     return (T)wrapper;
 
                 var firstWrapper = wrapperTypes.First().Value;
@@ -80,42 +81,42 @@ namespace ServiceActor
 
             wrapper = GetOrCreateWrapper(serviceType, objectToWrap, actionQueue);
 
-            wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<Type, object>());
+            wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<(Type, Type), object>());
 
-            wrapperTypes.TryAdd(serviceType, wrapper);
+            wrapperTypes.TryAdd(wrapperTypeKey, wrapper);
 
             return (T)wrapper;
         }
 
-        private class AssemblyTypeKey
-        {
-            private readonly Type _interfaceType;
-            private readonly Type _implType;
+        //private class WrapperTypeKey
+        //{
+        //    private readonly Type _interfaceType;
+        //    private readonly Type _implType;
 
-            public AssemblyTypeKey(Type @interfaceType, Type implType)
-            {
-                _interfaceType = interfaceType;
-                _implType = implType;
-            }
+        //    public WrapperTypeKey(Type @interfaceType, Type implType)
+        //    {
+        //        _interfaceType = interfaceType;
+        //        _implType = implType;
+        //    }
 
-            public override bool Equals(object obj)
-            {
-                var key = obj as AssemblyTypeKey;
-                return key != null &&
-                       EqualityComparer<Type>.Default.Equals(_interfaceType, key._interfaceType) &&
-                       EqualityComparer<Type>.Default.Equals(_implType, key._implType);
-            }
+        //    public override bool Equals(object obj)
+        //    {
+        //        var key = obj as WrapperTypeKey;
+        //        return key != null &&
+        //               EqualityComparer<Type>.Default.Equals(_interfaceType, key._interfaceType) &&
+        //               EqualityComparer<Type>.Default.Equals(_implType, key._implType);
+        //    }
 
-            public override int GetHashCode()
-            {
-                var hashCode = -20423575;
-                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_interfaceType);
-                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_implType);
-                return hashCode;
-            }
-        }
+        //    public override int GetHashCode()
+        //    {
+        //        var hashCode = -20423575;
+        //        hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_interfaceType);
+        //        hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_implType);
+        //        return hashCode;
+        //    }
+        //}
 
-        private readonly static ConcurrentDictionary<AssemblyTypeKey, Assembly> _wrapperAssemblyCache = new ConcurrentDictionary<AssemblyTypeKey, Assembly>();
+        private readonly static ConcurrentDictionary<(Type, Type), Assembly> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Assembly>();
 
         //private static Script<T> GetOrCreateScript<T>(Type implType)
         //{
@@ -141,7 +142,8 @@ namespace ServiceActor
         {
             if (EnableCache)
             {
-                var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor", MD5Hash(Assembly.GetCallingAssembly().Location));
+                var assemblyCacheFolder = CachePath ?? 
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", MD5Hash(Assembly.GetEntryAssembly().Location));
                 if (Directory.Exists(assemblyCacheFolder))
                 {
                     Directory.Delete(assemblyCacheFolder, true);
@@ -154,14 +156,15 @@ namespace ServiceActor
             var implType = objectToWrap.GetType();
             var sourceTemplate = new ServiceActorWrapperTemplate(interfaceType, implType);
 
-            var wrapperAssembly = _wrapperAssemblyCache.GetOrAdd(new AssemblyTypeKey(interfaceType, implType), (key) =>
+            var wrapperAssembly = _wrapperAssemblyCache.GetOrAdd((interfaceType, implType), (key) =>
             {
                 var source = sourceTemplate.TransformText();
 
                 string assemblyFilePath = null;
                 if (EnableCache)
                 {
-                    var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor", MD5Hash(Assembly.GetCallingAssembly().Location));
+                    var assemblyCacheFolder = CachePath ??
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", MD5Hash(Assembly.GetEntryAssembly().Location));
                     Directory.CreateDirectory(assemblyCacheFolder);
 
                     assemblyFilePath = Path.Combine(assemblyCacheFolder, MD5Hash(source) + ".dll");
