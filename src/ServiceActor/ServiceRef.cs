@@ -141,7 +141,7 @@ namespace ServiceActor
         {
             if (EnableCache)
             {
-                var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor");
+                var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor", MD5Hash(Assembly.GetCallingAssembly().Location));
                 if (Directory.Exists(assemblyCacheFolder))
                 {
                     Directory.Delete(assemblyCacheFolder, true);
@@ -161,7 +161,7 @@ namespace ServiceActor
                 string assemblyFilePath = null;
                 if (EnableCache)
                 {
-                    var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor");
+                    var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor", MD5Hash(Assembly.GetCallingAssembly().Location));
                     Directory.CreateDirectory(assemblyCacheFolder);
 
                     assemblyFilePath = Path.Combine(assemblyCacheFolder, MD5Hash(source) + ".dll");
