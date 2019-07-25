@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace ServiceActor
 {
-    public class InvocationItem : IDisposable
+    public class InvocationItem
     {
-        private readonly AutoResetEvent _executedEvent;
-        private readonly AsyncAutoResetEvent _asyncExecutedEvent;
+        private readonly AutoResetEvent _autoResetEvent;
+        private readonly AsyncAutoResetEvent _asyncAutoResetEvent;
 
         public InvocationItem(
             Action action,
@@ -26,7 +26,7 @@ namespace ServiceActor
             Async = false;
             BlockingCaller = blockingCaller;
 
-            _executedEvent = new AutoResetEvent(false);
+            _autoResetEvent = new AutoResetEvent(false);
         }
 
         public InvocationItem(
@@ -39,7 +39,7 @@ namespace ServiceActor
             Async = false;
             BlockingCaller = blockingCaller;
 
-            _executedEvent = new AutoResetEvent(false);
+            _autoResetEvent = new AutoResetEvent(false);
         }
 
         public InvocationItem(
@@ -56,7 +56,7 @@ namespace ServiceActor
             Async = true;
             BlockingCaller = blockingCaller;
 
-            _asyncExecutedEvent = new AsyncAutoResetEvent(false);
+            _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
         }
 
         public InvocationItem(
@@ -69,13 +69,13 @@ namespace ServiceActor
             Async = true;
             BlockingCaller = blockingCaller;
 
-            _asyncExecutedEvent = new AsyncAutoResetEvent(false);
+            _asyncAutoResetEvent = new AsyncAutoResetEvent(false);
         }
 
         internal void SignalExecuted()
         {
-            _executedEvent?.Set();
-            _asyncExecutedEvent?.Set();
+            _autoResetEvent?.Set();
+            _asyncAutoResetEvent?.Set();
         }
 
         public Action Action { get; private set; }
@@ -150,9 +150,9 @@ namespace ServiceActor
         {
             if (ActionQueue.CallTimeout == Timeout.Infinite)
             {
-                _executedEvent.WaitOne();
+                _autoResetEvent.WaitOne();
             }
-            else if (!_executedEvent.WaitOne(ActionQueue.CallTimeout))
+            else if (!_autoResetEvent.WaitOne(ActionQueue.CallTimeout))
             {
                 throw new TimeoutException();
             }
@@ -160,49 +160,13 @@ namespace ServiceActor
 
         public Task WaitExecutedAsync()
         {
-            return _asyncExecutedEvent.WaitAsync();
+            return _asyncAutoResetEvent.WaitAsync();
         }
 
         public override string ToString()
         {
             return $"{Target?.WrappedObject}({TypeOfObjectToWrap}) {Action?.Method ?? ActionAsync?.Method}";
         }
-
-        #region IDisposable Support
-        private bool _disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    _executedEvent?.Dispose();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                _disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~InvocationItem()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
-        }
-        #endregion
 
     }
 }
