@@ -61,7 +61,11 @@ namespace ServiceActor
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine(ex);
+                        if (_actionCallMonitor != null)
+                        {
+                            var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
+                            _actionCallMonitor?.UnhandledException(callDetails, ex);
+                        }
                     }
 
 
