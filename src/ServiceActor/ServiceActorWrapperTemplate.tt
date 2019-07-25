@@ -73,6 +73,8 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 res = invocationItem.GetLastPendingOperationResult<<#= property.PropertyType.GetTypeReferenceCode() #>>();
             }
 
+			invocationItem?.Dispose();
+
             return res;
 
             <# } #>
@@ -135,6 +137,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 invocationItem?.WaitForPendingOperationCompletion();
                 <# } #>
 
+				invocationItem?.Dispose();
 
             <# } #>
         }
@@ -203,6 +206,7 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 invocationItem?.WaitForPendingOperationCompletion();
                 <# } #>
 
+				invocationItem?.Dispose();
 
             <# } #>
         }
@@ -249,6 +253,8 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             invocationItem?.WaitForPendingOperationCompletion();
 
             <# } #>
+
+			invocationItem?.Dispose();
 
         }
         <# } else if (method.Info.ReturnType.BaseType == typeof(Task)) { #>
@@ -298,6 +304,8 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
                 res = invocationItem.GetLastPendingOperationResult<<#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>>();
             }
 
+			invocationItem?.Dispose();
+
             return res;
 
             <# } #>
@@ -346,6 +354,8 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             {
                 res = invocationItem.GetLastPendingOperationResult<<#= method.Info.ReturnType.GetTypeReferenceCode() #>>();
             }
+
+			invocationItem?.Dispose();
 
             return res;
 

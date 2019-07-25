@@ -13,6 +13,7 @@
     <PackageProjectUrl>https://github.com/adospace/ServiceActor</PackageProjectUrl>
     <RepositoryUrl>https://github.com/adospace/ServiceActor</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
