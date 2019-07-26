@@ -18,6 +18,7 @@ namespace ServiceActor
 {
     public static class ServiceRef
     {
+
         private static readonly ConcurrentDictionary<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConcurrentDictionary<object, ConcurrentDictionary<(Type, Type), object>>();
 
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
@@ -82,6 +83,7 @@ namespace ServiceActor
 
             wrapper = GetOrCreateWrapper(serviceType, objectToWrap, actionQueue);
 
+            //there is no need to use a Lazy here as the value factory is not used at all
             wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<(Type, Type), object>());
 
             wrapperTypes.TryAdd(wrapperTypeKey, wrapper);
@@ -89,51 +91,7 @@ namespace ServiceActor
             return (T)wrapper;
         }
 
-        //private class WrapperTypeKey
-        //{
-        //    private readonly Type _interfaceType;
-        //    private readonly Type _implType;
-
-        //    public WrapperTypeKey(Type @interfaceType, Type implType)
-        //    {
-        //        _interfaceType = interfaceType;
-        //        _implType = implType;
-        //    }
-
-        //    public override bool Equals(object obj)
-        //    {
-        //        var key = obj as WrapperTypeKey;
-        //        return key != null &&
-        //               EqualityComparer<Type>.Default.Equals(_interfaceType, key._interfaceType) &&
-        //               EqualityComparer<Type>.Default.Equals(_implType, key._implType);
-        //    }
-
-        //    public override int GetHashCode()
-        //    {
-        //        var hashCode = -20423575;
-        //        hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_interfaceType);
-        //        hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_implType);
-        //        return hashCode;
-        //    }
-        //}
-
-        private readonly static ConcurrentDictionary<(Type, Type), Assembly> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Assembly>();
-
-        //private static Script<T> GetOrCreateScript<T>(Type implType)
-        //{
-        //    var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), implType).TransformText();
-        //    //Console.WriteLine(asyncActorCode);
-        //    var script = _scriptCache.GetOrAdd(new ScriptTypeKey(typeof(T), implType), CSharpScript.Create<T>(
-        //        asyncActorCode,
-        //        options: ScriptOptions.Default.AddReferences(
-        //            Assembly.GetExecutingAssembly(),
-        //            typeof(T).Assembly,
-        //            typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-        //        globalsType: typeof(ScriptGlobals)
-        //        ));
-
-        //    return (Script<T>)script;
-        //}
+        private readonly static ConcurrentDictionary<(Type, Type), Lazy<Type>> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Lazy<Type>>();
 
         public static bool EnableCache { get; set; } = true;
 
@@ -157,7 +115,9 @@ namespace ServiceActor
             var implType = objectToWrap.GetType();
             var sourceTemplate = new ServiceActorWrapperTemplate(interfaceType, implType);
 
-            var wrapperAssembly = _wrapperAssemblyCache.GetOrAdd((interfaceType, implType), (key) =>
+            //using a Lazy ensure that add value factory is execute only once
+            //https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/
+            var wrapperImplType = _wrapperAssemblyCache.GetOrAdd((interfaceType, implType), (key) => new Lazy<Type>(() =>
             {
                 var source = sourceTemplate.TransformText();
 
@@ -172,7 +132,10 @@ namespace ServiceActor
 
                     if (File.Exists(assemblyFilePath))
                     {
-                        return Assembly.LoadFile(assemblyFilePath);
+                        var cachedAssembly = Assembly.LoadFile(assemblyFilePath);
+                        return cachedAssembly
+                            .GetTypes()
+                            .First(_ => _.GetInterface("IServiceActorWrapper") != null);
                     }
                 }
 
@@ -182,7 +145,7 @@ namespace ServiceActor
                         Assembly.GetExecutingAssembly(),
                         interfaceType.Assembly,
                         implType.Assembly,
-                        typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly)
+                        typeof(AsyncAutoResetEvent).Assembly)
                     );
 
                 var diagnostics = script.Compile();
@@ -193,7 +156,7 @@ namespace ServiceActor
 
                 var compilation = script.GetCompilation();
 
-                //var tempFile = Path.GetTempFileName();
+                Assembly generatedAssembly; 
                 using (var dllStream = new MemoryStream())
                 {
                     var emitResult = compilation.Emit(dllStream);
@@ -208,14 +171,17 @@ namespace ServiceActor
                         File.WriteAllBytes(assemblyFilePath, dllStream.ToArray());
                     }
 
-                    return Assembly.Load(dllStream.ToArray());
+                    generatedAssembly = Assembly.Load(dllStream.ToArray());
                 }
-            });
+
+                return generatedAssembly
+                    .GetTypes()
+                    .First(_ => _.GetInterface("IServiceActorWrapper") != null);
+            }));
 
             //return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);
-            var wrapperImplType = wrapperAssembly.GetTypes().First(_ => _.GetInterface("IServiceActorWrapper") != null);
             return Activator.CreateInstance(
-                wrapperImplType, objectToWrap, sourceTemplate.TypeToWrapFullName, actionQueue);
+                wrapperImplType.Value, objectToWrap, sourceTemplate.TypeToWrapFullName, actionQueue);
         }
 
         private static string MD5Hash(string input)
@@ -419,7 +385,7 @@ namespace ServiceActor
             {
                 return _queuesCache.AddOrUpdate(
                     aggregateKey,
-                    new ActionQueue(), 
+                    new ActionQueue(),
                     (key, oldValue) => oldValue);
             }
 
@@ -427,12 +393,12 @@ namespace ServiceActor
             {
                 return _queuesCache.AddOrUpdate(
                     serviceDomain.DomainKey,
-                    new ActionQueue(), 
+                    new ActionQueue(),
                     (key, oldValue) => oldValue);
             }
 
             return _queuesCache.AddOrUpdate(
-                objectToWrap.GetHashCode().ToString(), 
+                objectToWrap.GetHashCode().ToString(),
                 new ActionQueue(),
                 (key, oldValue) => oldValue);
         }
