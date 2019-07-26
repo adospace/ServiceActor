@@ -765,6 +765,8 @@ namespace ServiceActor.Tests
             Assert.IsNotNull(privateRefToService.Exception);
 
             serviceWithBlockAttribute.Method();
+
+            Assert.AreNotSame(((IServiceActorWrapper)serviceWithBlockAttribute).ActionQueue, ((IServiceActorWrapper)serviceWithoutBlockAttribute).ActionQueue);
         }
     }
 }
