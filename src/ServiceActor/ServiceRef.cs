@@ -385,7 +385,7 @@ namespace ServiceActor
             {
                 return _queuesCache.AddOrUpdate(
                     aggregateKey,
-                    new ActionQueue(),
+                    new ActionQueue(aggregateKey.ToString()),
                     (key, oldValue) => oldValue);
             }
 
@@ -393,13 +393,13 @@ namespace ServiceActor
             {
                 return _queuesCache.AddOrUpdate(
                     serviceDomain.DomainKey,
-                    new ActionQueue(),
+                    new ActionQueue(serviceDomain.DomainKey.ToString()),
                     (key, oldValue) => oldValue);
             }
 
             return _queuesCache.AddOrUpdate(
                 objectToWrap.GetHashCode().ToString(),
-                new ActionQueue(),
+                new ActionQueue(objectToWrap.GetType().FullName),
                 (key, oldValue) => oldValue);
         }
 

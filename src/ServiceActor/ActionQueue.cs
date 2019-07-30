@@ -30,7 +30,9 @@ namespace ServiceActor
             }
         }
 
-        public ActionQueue()
+        public string Name { get; }
+
+        public ActionQueue(string name)
         {
             _actionQueue = new ActionBlock<InvocationItem>(invocation =>
             {
@@ -89,6 +91,7 @@ namespace ServiceActor
                     invocation.Action();
                 }
             });
+            Name = name;
         }
 
         public void Stop()
