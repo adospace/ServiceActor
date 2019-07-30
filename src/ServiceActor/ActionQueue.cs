@@ -38,20 +38,15 @@ namespace ServiceActor
             {
                 if (invocation.KeepContextForAsyncCalls)
                 {
-                    //Console.WriteLine($"Current Thread ID Before action.Invoke: {Thread.CurrentThread.ManagedThreadId}");
                     _executingActionThreadId = Thread.CurrentThread.ManagedThreadId;
+
+                    var callDetails = new CallDetails(
+                        this,
+                        invocation);
 
                     try
                     {
-                        //System.Diagnostics.Debug.WriteLine($"-----Executing {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}...");
-                        if (_actionCallMonitor != null)
-                        {
-                            var callDetails = new CallDetails(
-                                this,
-                                invocation);
-                                //, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.BlockingCaller, invocation.Action, invocation.ActionAsync);
-                            _actionCallMonitor?.EnterMethod(callDetails);
-                        }
+                        _actionCallMonitor?.EnterMethod(callDetails);
                         _executingInvocationItem = invocation;
 
                         if (invocation.Async)
@@ -65,37 +60,17 @@ namespace ServiceActor
                     }
                     catch (Exception ex)
                     {
-                        if (_actionCallMonitor != null)
-                        {
-                            var callDetails = new CallDetails(
-                                this,
-                                invocation);
-                                //invocation.Target,
-                                //invocation.Target?.WrappedObject, 
-                                //invocation.TypeOfObjectToWrap, 
-                                //invocation.BlockingCaller, 
-                                //invocation.Action, 
-                                //invocation.ActionAsync);
-                            _actionCallMonitor?.UnhandledException(callDetails, ex);
-                        }
+                        _actionCallMonitor?.UnhandledException(callDetails, ex);
                     }
 
 
-                    //System.Diagnostics.Debug.WriteLine($"-----Executed {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}");
-                    if (_actionCallMonitor != null)
-                    {
-                        var callDetails = new CallDetails(this, invocation);
-                        // invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.BlockingCaller, invocation.Action, invocation.ActionAsync);
-                        _actionCallMonitor?.ExitMethod(callDetails);
-                    }
+                    _actionCallMonitor?.ExitMethod(callDetails);
 
                     var executingInvocationItem = _executingInvocationItem;
                     _executingInvocationItem = null;
                     _executingActionThreadId = null;
 
                     executingInvocationItem.SignalExecuted();
-                    //action.Invoke();
-                    //Console.WriteLine($"Current Thread ID After action.Invoke: {Thread.CurrentThread.ManagedThreadId}");
                 }
                 else
                 {
