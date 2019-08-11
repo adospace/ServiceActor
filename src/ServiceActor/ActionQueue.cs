@@ -34,48 +34,55 @@ namespace ServiceActor
 
         public ActionQueue(string name)
         {
-            _actionQueue = new ActionBlock<InvocationItem>(invocation =>
+            _actionQueue = new ActionBlock<InvocationItem>(async invocation =>
             {
-                if (invocation.KeepContextForAsyncCalls)
+                _executingActionThreadId = Thread.CurrentThread.ManagedThreadId;
+
+                var callDetails = new CallDetails(
+                    this,
+                    invocation);
+
+                _actionCallMonitor?.EnterMethod(callDetails);
+                _executingInvocationItem = invocation;
+
+                try
                 {
-                    _executingActionThreadId = Thread.CurrentThread.ManagedThreadId;
-
-                    var callDetails = new CallDetails(
-                        this,
-                        invocation);
-
-                    try
+                    if (invocation.KeepContextForAsyncCalls)
                     {
-                        _actionCallMonitor?.EnterMethod(callDetails);
-                        _executingInvocationItem = invocation;
-
                         if (invocation.Async)
                         {
-                            AsyncContext.Run(async () => await invocation.ActionAsync());
+                            var funcTask = invocation.ActionAsync;
+                            AsyncContext.Run(funcTask);
                         }
                         else
                         {
                             AsyncContext.Run(invocation.Action);
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _actionCallMonitor?.UnhandledException(callDetails, ex);
+                        if (invocation.Async)
+                        {
+                            await invocation.ActionAsync();
+                        }
+                        else
+                        {
+                            invocation.Action();
+                        }
                     }
-
-
-                    _actionCallMonitor?.ExitMethod(callDetails);
-
-                    var executingInvocationItem = _executingInvocationItem;
-                    _executingInvocationItem = null;
-                    _executingActionThreadId = null;
-
-                    executingInvocationItem.SignalExecuted();
                 }
-                else
+                catch (Exception ex)
                 {
-                    invocation.Action();
+                    _actionCallMonitor?.UnhandledException(callDetails, ex);
                 }
+
+                _actionCallMonitor?.ExitMethod(callDetails);
+
+                var executingInvocationItem = _executingInvocationItem;
+                _executingInvocationItem = null;
+                _executingActionThreadId = null;
+
+                executingInvocationItem.SignalExecuted();
             });
             Name = name;
         }
@@ -85,10 +92,10 @@ namespace ServiceActor
             _actionQueue.Complete();
         }
 
-        public InvocationItem Enqueue(IServiceActorWrapper target, 
-            string typeOfObjectToWrap, 
-            Action action, 
-            bool keepContextForAsyncCalls = true, 
+        public InvocationItem Enqueue(IServiceActorWrapper target,
+            string typeOfObjectToWrap,
+            Action action,
+            bool keepContextForAsyncCalls = true,
             bool blockingCaller = true)
         {
             if (target == null)
@@ -114,7 +121,7 @@ namespace ServiceActor
             }
 
             var invocationItem = new InvocationItem(
-                action, 
+                action,
                 target,
                 typeOfObjectToWrap,
                 keepContextForAsyncCalls,
@@ -125,8 +132,8 @@ namespace ServiceActor
             return invocationItem;
         }
 
-        public InvocationItem Enqueue(Action action, 
-            bool keepContextForAsyncCalls = true, 
+        public InvocationItem Enqueue(Action action,
+            bool keepContextForAsyncCalls = true,
             bool blockingCaller = true)
         {
             if (action == null)
