@@ -47,7 +47,7 @@ private class Counter : ICounter
 }
 ```
 I'm sure you already noticed that implementation is not thread-safe: i.e. `Increment` write private state without any lock.
-This the test of (not-)multithreding behavior of `Counter` class:
+This is the test of (not-)multithreding behavior of `Counter` class:
 ```c#
 ICounter counter = new Counter();//or get from DI 
 
