@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -19,7 +20,7 @@ namespace ServiceActor
     public static class ServiceRef
     {
 
-        private static readonly ConcurrentDictionary<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConcurrentDictionary<object, ConcurrentDictionary<(Type, Type), object>>();
+        private static readonly ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>>();
 
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
 
@@ -84,7 +85,7 @@ namespace ServiceActor
             wrapper = GetOrCreateWrapper(serviceType, objectToWrap, actionQueue);
 
             //there is no need to use a Lazy here as the value factory is not used at all
-            wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<(Type, Type), object>());
+            wrapperTypes = _wrappersCache.GetOrCreateValue(objectToWrap);
 
             wrapperTypes.TryAdd(wrapperTypeKey, wrapper);
 
@@ -343,7 +344,7 @@ namespace ServiceActor
                     actionQueue = wrapperTypes.Values.Cast<IServiceActorWrapper>()
                         .Select(_ => _.ActionQueue)
                         .Distinct()
-                        .Single();
+                        .SingleOrDefault();
                 }
             }
 
@@ -404,4 +405,5 @@ namespace ServiceActor
         }
 
     }
+
 }
