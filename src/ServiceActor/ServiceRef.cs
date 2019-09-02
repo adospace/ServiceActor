@@ -75,7 +75,7 @@ namespace ServiceActor
                 actionQueue = wrapperTypes.Values.Cast<IServiceActorWrapper>()
                     .Select(_ => _.ActionQueue)
                     .Distinct()
-                    .Single();
+                    .SingleOrDefault();
 
             }
 
