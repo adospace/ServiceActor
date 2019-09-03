@@ -7,7 +7,6 @@ namespace ServiceActor
     public interface IServiceActorWrapper
     {
         object WrappedObject { get; }
-
         ActionQueue ActionQueue { get; }
     }
 }
