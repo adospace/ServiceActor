@@ -117,22 +117,6 @@ namespace ServiceActor
 
         private readonly static ConcurrentDictionary<AssemblyTypeKey, Assembly> _wrapperAssemblyCache = new ConcurrentDictionary<AssemblyTypeKey, Assembly>();
 
-        //private static Script<T> GetOrCreateScript<T>(Type implType)
-        //{
-        //    var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), implType).TransformText();
-        //    //Console.WriteLine(asyncActorCode);
-        //    var script = _scriptCache.GetOrAdd(new ScriptTypeKey(typeof(T), implType), CSharpScript.Create<T>(
-        //        asyncActorCode,
-        //        options: ScriptOptions.Default.AddReferences(
-        //            Assembly.GetExecutingAssembly(),
-        //            typeof(T).Assembly,
-        //            typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-        //        globalsType: typeof(ScriptGlobals)
-        //        ));
-
-        //    return (Script<T>)script;
-        //}
-
         public static bool EnableCache { get; set; } = true;
 
         public static string CachePath { get; set; }
@@ -401,22 +385,29 @@ namespace ServiceActor
             return new ActionQueue();
         }
 
-        //public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
-        //{
-        //    if (wrapper is IServiceActorWrapper serviceActorWrapper)
-        //    {
-        //        wrappedObject = (T)serviceActorWrapper.WrappedObject;
-        //        return true;
-        //    }
+        /// <summary>
+        /// Get the wrapped object of a service actor
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="wrapper"></param>
+        /// <param name="wrappedObject"></param>
+        /// <returns></returns>
+        public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
+        {
+            if (wrapper is IServiceActorWrapper serviceActorWrapper)
+            {
+                wrappedObject = (T)serviceActorWrapper.WrappedObject;
+                return true;
+            }
 
-        //    if (wrapper is T)
-        //    {
-        //        wrappedObject = (T)wrapper;
-        //        return true;
-        //    }
+            //if (wrapper is T)
+            //{
+            //    wrappedObject = (T)wrapper;
+            //    return true;
+            //}
 
-        //    wrappedObject = null;
-        //    return false;
-        //}
+            wrappedObject = null;
+            return false;
+        }
     }
 }

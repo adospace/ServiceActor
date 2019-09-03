@@ -264,8 +264,11 @@ namespace ServiceActor.Tests
         [TestMethod]
         public async Task TestImageServiceAsync()
         {
-            var imageService = ServiceRef.Create<IImageService>(new ImageServiceAsync());
+            var wrappedImageService = new ImageServiceAsync();
+            var imageService = ServiceRef.Create<IImageService>(wrappedImageService);
 
+            Assert.IsTrue(ServiceRef.TryGetWrappedObject<ImageServiceAsync>(imageService, out var returnedWrappedObject));
+            Assert.AreSame(wrappedImageService, returnedWrappedObject);
             //await imageService.GetOrDownloadAsync("https://myimage");
 
             //Assert.AreEqual(1, imageService.Images.Count);
