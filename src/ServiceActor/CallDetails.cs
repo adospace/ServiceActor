@@ -6,25 +6,26 @@ namespace ServiceActor
     public class CallDetails
     {
         public ActionQueue ActionQueue { get; }
-        public IServiceActorWrapper Target { get; }
-        public object WrappedObject { get; }
-        public string TypeOfObjectToWrap { get; }
-        public Action Action { get; }
-        public Func<Task> ActionAsync { get; }
+        public InvocationItem Invocation { get; }
 
-        public CallDetails(ActionQueue actionQueue, IServiceActorWrapper target, object wrappedObject, string typeOfObjectToWrap, Action action, Func<Task> actionAsync)
+        public IServiceActorWrapper Target => Invocation.Target;
+        public object WrappedObject => Invocation.Target?.WrappedObject;
+        public string TypeOfObjectToWrap => Invocation.TypeOfObjectToWrap;
+        public bool BlockingCaller => Invocation.BlockingCaller;
+        public Action Action => Invocation.Action;
+        public Func<Task> ActionAsync => Invocation.ActionAsync;
+
+        public CallDetails(
+            ActionQueue actionQueue,
+            InvocationItem invocation)
         {
             ActionQueue = actionQueue;
-            Target = target;
-            WrappedObject = wrappedObject;
-            TypeOfObjectToWrap = typeOfObjectToWrap;
-            Action = action;
-            ActionAsync = actionAsync;
+            Invocation = invocation;
         }
 
         public override string ToString()
         {
-            return $"{Target?.WrappedObject}({TypeOfObjectToWrap}) {Action?.Method ?? ActionAsync?.Method}";
+            return $"{Invocation}({ActionQueue.Name})";
         }
     }
 }

@@ -718,5 +718,55 @@ namespace ServiceActor.Tests
 
             Assert.IsTrue(serviceA.TestProperty);
         }
+
+        public interface ICommonService
+        {
+            void Method();
+        }
+
+        private class ServiceWithBlockCallerAttribute : ICommonService
+        {
+            [BlockCaller]
+            public void Method()
+            {
+                //registering a pending op in a method with BlockCaller attribute should not throw exception
+                var ev = new AutoResetEvent(false);
+                ServiceRef.RegisterPendingOperation(this, ev);
+                ev.Set();
+            }
+        }
+
+        private class ServiceWithoutBlockCallerAttribute : ICommonService
+        {
+            public Exception Exception { get; private set; }
+            public void Method()
+            {
+                //registering a pending op in a method without a BlockCaller attribute should throw exception
+                try
+                {
+                    ServiceRef.RegisterPendingOperation(this, new AutoResetEvent(false));
+                }
+                catch (Exception ex)
+                {
+                    Exception = ex;
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ServiceRefShouldCreateDifferentWrappersForDifferentActualTypes()
+        {
+            var privateRefToService = new ServiceWithoutBlockCallerAttribute();
+            var serviceWithoutBlockAttribute = ServiceRef.Create<ICommonService>(privateRefToService);
+            var serviceWithBlockAttribute = ServiceRef.Create<ICommonService>(new ServiceWithBlockCallerAttribute());
+
+            serviceWithoutBlockAttribute.Method();
+            ServiceRef.WaitForCallQueueCompletion(serviceWithoutBlockAttribute);
+            Assert.IsNotNull(privateRefToService.Exception);
+
+            serviceWithBlockAttribute.Method();
+
+            Assert.AreNotSame(((IServiceActorWrapper)serviceWithBlockAttribute).ActionQueue, ((IServiceActorWrapper)serviceWithoutBlockAttribute).ActionQueue);
+        }
     }
 }

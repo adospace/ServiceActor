@@ -30,61 +30,61 @@ namespace ServiceActor
             }
         }
 
-        public ActionQueue()
+        public string Name { get; }
+
+        public ActionQueue(string name)
         {
-            _actionQueue = new ActionBlock<InvocationItem>(invocation =>
+            _actionQueue = new ActionBlock<InvocationItem>(async invocation =>
             {
-                if (invocation.KeepContextForAsyncCalls)
+                _executingActionThreadId = Thread.CurrentThread.ManagedThreadId;
+
+                var callDetails = new CallDetails(
+                    this,
+                    invocation);
+
+                _actionCallMonitor?.EnterMethod(callDetails);
+                _executingInvocationItem = invocation;
+
+                try
                 {
-                    //Console.WriteLine($"Current Thread ID Before action.Invoke: {Thread.CurrentThread.ManagedThreadId}");
-                    _executingActionThreadId = Thread.CurrentThread.ManagedThreadId;
-
-                    try
+                    if (invocation.KeepContextForAsyncCalls)
                     {
-                        //System.Diagnostics.Debug.WriteLine($"-----Executing {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}...");
-                        if (_actionCallMonitor != null)
-                        {
-                            var callDetails = new CallDetails(
-                                this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
-                            _actionCallMonitor?.EnterMethod(callDetails);
-                        }
-                        _executingInvocationItem = invocation;
-
                         if (invocation.Async)
                         {
-                            AsyncContext.Run(async () => await invocation.ActionAsync());
+                            var funcTask = invocation.ActionAsync;
+                            AsyncContext.Run(funcTask);
                         }
                         else
                         {
                             AsyncContext.Run(invocation.Action);
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        System.Diagnostics.Debug.WriteLine(ex);
+                        if (invocation.Async)
+                        {
+                            await invocation.ActionAsync();
+                        }
+                        else
+                        {
+                            invocation.Action();
+                        }
                     }
-
-
-                    //System.Diagnostics.Debug.WriteLine($"-----Executed {invocation.Target?.WrappedObject}({invocation.TypeOfObjectToWrap}) {invocation.Action.Method}");
-                    if (_actionCallMonitor != null)
-                    {
-                        var callDetails = new CallDetails(this, invocation.Target, invocation.Target?.WrappedObject, invocation.TypeOfObjectToWrap, invocation.Action, invocation.ActionAsync);
-                        _actionCallMonitor?.ExitMethod(callDetails);
-                    }
-
-                    var executingInvocationItem = _executingInvocationItem;
-                    _executingInvocationItem = null;
-                    _executingActionThreadId = null;
-
-                    executingInvocationItem.SignalExecuted();
-                    //action.Invoke();
-                    //Console.WriteLine($"Current Thread ID After action.Invoke: {Thread.CurrentThread.ManagedThreadId}");
                 }
-                else
+                catch (Exception ex)
                 {
-                    invocation.Action();
+                    _actionCallMonitor?.UnhandledException(callDetails, ex);
                 }
+
+                _actionCallMonitor?.ExitMethod(callDetails);
+
+                var executingInvocationItem = _executingInvocationItem;
+                _executingInvocationItem = null;
+                _executingActionThreadId = null;
+
+                executingInvocationItem.SignalExecuted();
             });
+            Name = name;
         }
 
         public void Stop()
@@ -92,10 +92,10 @@ namespace ServiceActor
             _actionQueue.Complete();
         }
 
-        public InvocationItem Enqueue(IServiceActorWrapper target, 
-            string typeOfObjectToWrap, 
-            Action action, 
-            bool keepContextForAsyncCalls = true, 
+        public InvocationItem Enqueue(IServiceActorWrapper target,
+            string typeOfObjectToWrap,
+            Action action,
+            bool keepContextForAsyncCalls = true,
             bool blockingCaller = true)
         {
             if (target == null)
@@ -117,11 +117,11 @@ namespace ServiceActor
             {
                 //if the calling thread is the same as the executing action thread then just pass thru
                 action();
-                return null;
+                return _executingInvocationItem;
             }
 
             var invocationItem = new InvocationItem(
-                action, 
+                action,
                 target,
                 typeOfObjectToWrap,
                 keepContextForAsyncCalls,
@@ -132,8 +132,8 @@ namespace ServiceActor
             return invocationItem;
         }
 
-        public InvocationItem Enqueue(Action action, 
-            bool keepContextForAsyncCalls = true, 
+        public InvocationItem Enqueue(Action action,
+            bool keepContextForAsyncCalls = true,
             bool blockingCaller = true)
         {
             if (action == null)
@@ -259,7 +259,7 @@ namespace ServiceActor
 
             if (_executingInvocationItem == null)
             {
-                throw new InvalidOperationException("Seems that RegisterPendingOperations has been called outside of a service actor wrapper or from a method not wrapped. Also ensure that calling method/property is not decorated with a AllowConcurrentAccess attribute.");
+                throw new InvalidOperationException("Seems that RegisterPendingOperations has been called outside of a service actor wrapper or from a method not wrapped. Also ensure that calling method/property is decorated with a AllowConcurrentAccess attribute.");
             }
 
             _executingInvocationItem.EnqueuePendingOperation(pendingOperation);

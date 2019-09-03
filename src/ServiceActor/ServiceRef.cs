@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -18,14 +19,8 @@ namespace ServiceActor
 {
     public static class ServiceRef
     {
-        //public class ScriptGlobals
-        //{
-        //    public object ObjectToWrap { get; set; }
 
-        //    public ActionQueue ActionQueueToShare { get; set; }
-        //}
-
-        private static readonly ConcurrentDictionary<object, ConcurrentDictionary<Type, object>> _wrappersCache = new ConcurrentDictionary<object, ConcurrentDictionary<Type, object>>();
+        private static readonly ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>>();
 
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
 
@@ -65,73 +60,39 @@ namespace ServiceActor
 
             ActionQueue actionQueue = null;
             object wrapper;
+            var wrapperTypeKey = (serviceType, objectToWrap.GetType());
 
             if (_wrappersCache.TryGetValue(objectToWrap, out var wrapperTypes))
             {
-                if (wrapperTypes.TryGetValue(serviceType, out wrapper))
+                if (wrapperTypes.TryGetValue(wrapperTypeKey, out wrapper))
                     return (T)wrapper;
 
-                var firstWrapper = wrapperTypes.First().Value;
+                //use defensive code to get the underling ActionQueue
+                //just to be sure that only one queue is created for a single object
 
-                actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
+                //var firstWrapper = wrapperTypes.First().Value;
+                //actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
+
+                actionQueue = wrapperTypes.Values.Cast<IServiceActorWrapper>()
+                    .Select(_ => _.ActionQueue)
+                    .Distinct()
+                    .SingleOrDefault();
+
             }
 
-            actionQueue = actionQueue ?? GetActionQueueFor(serviceType, aggregateKey);
+            actionQueue = actionQueue ?? GetActionQueueFor(objectToWrap, serviceType, aggregateKey);
 
             wrapper = GetOrCreateWrapper(serviceType, objectToWrap, actionQueue);
 
-            wrapperTypes = _wrappersCache.GetOrAdd(objectToWrap, new ConcurrentDictionary<Type, object>());
+            //there is no need to use a Lazy here as the value factory is not used at all
+            wrapperTypes = _wrappersCache.GetOrCreateValue(objectToWrap);
 
-            wrapperTypes.TryAdd(serviceType, wrapper);
+            wrapperTypes.TryAdd(wrapperTypeKey, wrapper);
 
             return (T)wrapper;
         }
 
-        private class AssemblyTypeKey
-        {
-            private readonly Type _interfaceType;
-            private readonly Type _implType;
-
-            public AssemblyTypeKey(Type @interfaceType, Type implType)
-            {
-                _interfaceType = interfaceType;
-                _implType = implType;
-            }
-
-            public override bool Equals(object obj)
-            {
-                var key = obj as AssemblyTypeKey;
-                return key != null &&
-                       EqualityComparer<Type>.Default.Equals(_interfaceType, key._interfaceType) &&
-                       EqualityComparer<Type>.Default.Equals(_implType, key._implType);
-            }
-
-            public override int GetHashCode()
-            {
-                var hashCode = -20423575;
-                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_interfaceType);
-                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(_implType);
-                return hashCode;
-            }
-        }
-
-        private readonly static ConcurrentDictionary<AssemblyTypeKey, Assembly> _wrapperAssemblyCache = new ConcurrentDictionary<AssemblyTypeKey, Assembly>();
-
-        //private static Script<T> GetOrCreateScript<T>(Type implType)
-        //{
-        //    var asyncActorCode = new ServiceActorWrapperTemplate(typeof(T), implType).TransformText();
-        //    //Console.WriteLine(asyncActorCode);
-        //    var script = _scriptCache.GetOrAdd(new ScriptTypeKey(typeof(T), implType), CSharpScript.Create<T>(
-        //        asyncActorCode,
-        //        options: ScriptOptions.Default.AddReferences(
-        //            Assembly.GetExecutingAssembly(),
-        //            typeof(T).Assembly,
-        //            typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly),
-        //        globalsType: typeof(ScriptGlobals)
-        //        ));
-
-        //    return (Script<T>)script;
-        //}
+        private readonly static ConcurrentDictionary<(Type, Type), Lazy<Type>> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Lazy<Type>>();
 
         public static bool EnableCache { get; set; } = true;
 
@@ -141,7 +102,8 @@ namespace ServiceActor
         {
             if (EnableCache)
             {
-                var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor");
+                var assemblyCacheFolder = CachePath ??
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", MD5Hash(Assembly.GetEntryAssembly().Location));
                 if (Directory.Exists(assemblyCacheFolder))
                 {
                     Directory.Delete(assemblyCacheFolder, true);
@@ -154,23 +116,29 @@ namespace ServiceActor
             var implType = objectToWrap.GetType();
             var sourceTemplate = new ServiceActorWrapperTemplate(interfaceType, implType);
 
-            var wrapperAssembly = _wrapperAssemblyCache.GetOrAdd(new AssemblyTypeKey(interfaceType, implType), (key) =>
+            //using a Lazy ensure that add value factory is execute only once
+            //https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/
+            var wrapperImplType = _wrapperAssemblyCache.GetOrAdd((interfaceType, implType), (key) => new Lazy<Type>(() =>
             {
                 var source = sourceTemplate.TransformText();
 
                 string assemblyFilePath = null;
                 if (EnableCache)
                 {
-                    var assemblyCacheFolder = CachePath ?? Path.Combine(Path.GetTempPath(), "ServiceActor");
+                    var assemblyCacheFolder = CachePath ??
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", MD5Hash(Assembly.GetEntryAssembly().Location));
                     Directory.CreateDirectory(assemblyCacheFolder);
 
                     assemblyFilePath = Path.Combine(assemblyCacheFolder, MD5Hash(source) + ".dll");
 
                     if (File.Exists(assemblyFilePath))
                     {
-                        return Assembly.LoadFile(assemblyFilePath);
+                        var cachedAssembly = Assembly.LoadFile(assemblyFilePath);
+                        return cachedAssembly
+                            .GetTypes()
+                            .First(_ => _.GetInterface("IServiceActorWrapper") != null);
                     }
-                }               
+                }
 
                 var script = CSharpScript.Create(
                     source,
@@ -178,7 +146,7 @@ namespace ServiceActor
                         Assembly.GetExecutingAssembly(),
                         interfaceType.Assembly,
                         implType.Assembly,
-                        typeof(Nito.AsyncEx.AsyncAutoResetEvent).Assembly)
+                        typeof(AsyncAutoResetEvent).Assembly)
                     );
 
                 var diagnostics = script.Compile();
@@ -189,7 +157,7 @@ namespace ServiceActor
 
                 var compilation = script.GetCompilation();
 
-                //var tempFile = Path.GetTempFileName();
+                Assembly generatedAssembly; 
                 using (var dllStream = new MemoryStream())
                 {
                     var emitResult = compilation.Emit(dllStream);
@@ -204,14 +172,17 @@ namespace ServiceActor
                         File.WriteAllBytes(assemblyFilePath, dllStream.ToArray());
                     }
 
-                    return Assembly.Load(dllStream.ToArray());
-                }           
-            });
+                    generatedAssembly = Assembly.Load(dllStream.ToArray());
+                }
+
+                return generatedAssembly
+                    .GetTypes()
+                    .First(_ => _.GetInterface("IServiceActorWrapper") != null);
+            }));
 
             //return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);
-            var wrapperImplType = wrapperAssembly.GetTypes().First(_ => _.GetInterface("IServiceActorWrapper") != null);
             return Activator.CreateInstance(
-                wrapperImplType, objectToWrap, sourceTemplate.TypeToWrapFullName, actionQueue);
+                wrapperImplType.Value, objectToWrap, sourceTemplate.TypeToWrapFullName, actionQueue);
         }
 
         private static string MD5Hash(string input)
@@ -258,9 +229,16 @@ namespace ServiceActor
             {
                 if (_wrappersCache.TryGetValue(serviceObject, out var wrapperTypes))
                 {
-                    var firstWrapper = wrapperTypes.First().Value;
+                    //use defensive code to get the underling ActionQueue
+                    //just to be sure that only one queue is created for a single object
 
-                    actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
+                    //var firstWrapper = wrapperTypes.First().Value;
+                    //actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
+
+                    actionQueue = wrapperTypes.Values.Cast<IServiceActorWrapper>()
+                        .Select(_ => _.ActionQueue)
+                        .Distinct()
+                        .Single();
                 }
             }
 
@@ -288,16 +266,17 @@ namespace ServiceActor
                 throw new ArgumentException("Service object argument is not a wrapper for a service");
             }
 
-            var completionEvent = new AutoResetEvent(false);
-
-            serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
-
-            if (millisecondsTimeout > 0)
+            using (var completionEvent = new AutoResetEvent(false))
             {
-                return completionEvent.WaitOne(millisecondsTimeout);
-            }
+                serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
 
-            completionEvent.WaitOne();
+                if (millisecondsTimeout > 0)
+                {
+                    return completionEvent.WaitOne(millisecondsTimeout);
+                }
+
+                completionEvent.WaitOne();
+            }
             return true;
         }
 
@@ -321,7 +300,7 @@ namespace ServiceActor
 
             serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
 
-            if (cancellationToken != default(CancellationToken))
+            if (cancellationToken != default)
             {
                 return completionEvent.WaitAsync(cancellationToken);
             }
@@ -346,12 +325,29 @@ namespace ServiceActor
             }
 
             ActionQueue actionQueue = null;
-            if (_wrappersCache.TryGetValue(objectWrapped, out var wrapperTypes))
-            {
-                var firstWrapper = wrapperTypes.First().Value;
 
-                actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
+            if (objectWrapped is IServiceActorWrapper objectWrappedAsActionQueueOwner)
+            {
+                actionQueue = objectWrappedAsActionQueueOwner.ActionQueue;
             }
+
+            if (actionQueue == null)
+            {
+                if (_wrappersCache.TryGetValue(objectWrapped, out var wrapperTypes))
+                {
+                    //use defensive code to get the underling ActionQueue
+                    //just to be sure that only one queue is created for a single object
+
+                    //var firstWrapper = wrapperTypes.First().Value;
+                    //actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
+
+                    actionQueue = wrapperTypes.Values.Cast<IServiceActorWrapper>()
+                        .Select(_ => _.ActionQueue)
+                        .Distinct()
+                        .SingleOrDefault();
+                }
+            }
+
 
             if (actionQueue == null)
             {
@@ -384,39 +380,30 @@ namespace ServiceActor
 
         #endregion
 
-        private static ActionQueue GetActionQueueFor(Type typeToWrap, object aggregateKey)
+        private static ActionQueue GetActionQueueFor(object objectToWrap, Type typeToWrap, object aggregateKey)
         {
             if (aggregateKey != null)
             {
-                return _queuesCache.AddOrUpdate(aggregateKey,
-                    new ActionQueue(), (key, oldValue) => oldValue);
+                return _queuesCache.AddOrUpdate(
+                    aggregateKey,
+                    new ActionQueue(aggregateKey.ToString()),
+                    (key, oldValue) => oldValue);
             }
 
             if (Attribute.GetCustomAttribute(typeToWrap, typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
             {
-                return _queuesCache.AddOrUpdate(serviceDomain.DomainKey, 
-                    new ActionQueue(), (key, oldValue) => oldValue);
+                return _queuesCache.AddOrUpdate(
+                    serviceDomain.DomainKey,
+                    new ActionQueue(serviceDomain.DomainKey.ToString()),
+                    (key, oldValue) => oldValue);
             }
 
-            return new ActionQueue();
+            return _queuesCache.AddOrUpdate(
+                objectToWrap.GetHashCode().ToString(),
+                new ActionQueue(objectToWrap.GetType().FullName),
+                (key, oldValue) => oldValue);
         }
 
-        //public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
-        //{
-        //    if (wrapper is IServiceActorWrapper serviceActorWrapper)
-        //    {
-        //        wrappedObject = (T)serviceActorWrapper.WrappedObject;
-        //        return true;
-        //    }
-
-        //    if (wrapper is T)
-        //    {
-        //        wrappedObject = (T)wrapper;
-        //        return true;
-        //    }
-
-        //    wrappedObject = null;
-        //    return false;
-        //}
     }
+
 }

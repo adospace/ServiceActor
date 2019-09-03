@@ -13,5 +13,10 @@ namespace ServiceActor.Tests
         {
             Console.WriteLine($"Exit {callDetails}");
         }
+
+        public void UnhandledException(CallDetails callDetails, Exception ex)
+        {
+            Console.WriteLine($"Unhandled exception {callDetails}:{Environment.NewLine}{ex}");
+        }
     }
 }

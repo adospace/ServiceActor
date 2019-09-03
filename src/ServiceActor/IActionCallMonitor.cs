@@ -9,5 +9,7 @@ namespace ServiceActor
         void EnterMethod(CallDetails callDetails);
 
         void ExitMethod(CallDetails callDetails);
+
+        void UnhandledException(CallDetails callDetails, Exception ex);
     }
 }
