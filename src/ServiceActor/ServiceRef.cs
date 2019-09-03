@@ -404,6 +404,24 @@ namespace ServiceActor
                 (key, oldValue) => oldValue);
         }
 
+        public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
+        {
+            if (wrapper is IServiceActorWrapper serviceActorWrapper)
+            {
+                wrappedObject = (T)serviceActorWrapper.WrappedObject;
+                return true;
+            }
+
+            if (wrapper is T)
+            {
+                wrappedObject = (T)wrapper;
+                return true;
+            }
+
+            wrappedObject = null;
+            return false;
+        }
+
     }
 
 }
