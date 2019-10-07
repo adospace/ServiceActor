@@ -34,7 +34,7 @@ namespace ServiceActor
         /// <param name="objectToWrap">Actual implementation type of the service</param>
         /// <param name="aggregateKey">Optional aggregation key to use in place of the <see cref="ServiceDomainAttribute"/> attribute</param>
         /// <returns>Synchronization wrapper object that implements <typeparamref name="T"/></returns>
-        public static T CreateFor<T>(object objectToWrap, object aggregateKey = null) where T : class
+        public static T CreateFor<T>(object objectToWrap, object aggregateKey = null, bool throwIfNotFound = true) where T : class
         {
             if (objectToWrap == null)
             {
@@ -54,6 +54,14 @@ namespace ServiceActor
 
                 objectToWrap = ((IServiceActorWrapper)objectToWrap).WrappedObject;
                 //throw new ArgumentException($"Parameter is already a wrapper but not for interface '{serviceType}'", nameof(objectToWrap));
+            }
+
+            if (!objectToWrap.GetType().Implements(typeof(T)))
+            {
+                if (!throwIfNotFound)
+                    return null;
+
+                throw new InvalidOperationException($"Object of type '{objectToWrap.GetType()}' does not implement interface '{typeof(T)}'");
             }
 
             //NOTE: Do not use AddOrUpdate() to avoid _wrapperCache lock while generating wrapper
@@ -77,7 +85,6 @@ namespace ServiceActor
                     .Select(_ => _.ActionQueue)
                     .Distinct()
                     .SingleOrDefault();
-
             }
 
             actionQueue = actionQueue ?? GetActionQueueFor(objectToWrap, serviceType, aggregateKey);
@@ -157,7 +164,7 @@ namespace ServiceActor
 
                 var compilation = script.GetCompilation();
 
-                Assembly generatedAssembly; 
+                Assembly generatedAssembly;
                 using (var dllStream = new MemoryStream())
                 {
                     var emitResult = compilation.Emit(dllStream);
@@ -309,6 +316,7 @@ namespace ServiceActor
                 return completionEvent.WaitAsync();
             }
         }
+
         #region Pending Operation
 
         #region Pending Operations

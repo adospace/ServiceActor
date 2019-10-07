@@ -768,5 +768,30 @@ namespace ServiceActor.Tests
 
             Assert.AreNotSame(((IServiceActorWrapper)serviceWithBlockAttribute).ActionQueue, ((IServiceActorWrapper)serviceWithoutBlockAttribute).ActionQueue);
         }
+
+
+        public class MyServiceNotImplementingService1
+        {
+
+        }
+
+        public class MyServiceImplementingService2 : IService2
+        {
+
+        }
+
+        [TestMethod]
+        public void TestCreateForNotThrowingException()
+        {
+            Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.CreateFor<IService1>(new MyServiceNotImplementingService1()));
+
+            var service2Ref = ServiceRef.CreateFor<IService2>(new MyServiceImplementingService2());
+
+            Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.CreateFor<IService1>(service2Ref));
+
+            Assert.IsNull(ServiceRef.CreateFor<IService1>(new MyServiceNotImplementingService1(), throwIfNotFound: false));
+            
+            Assert.IsNull(ServiceRef.CreateFor<IService1>(service2Ref, throwIfNotFound: false));
+        }
     }
 }

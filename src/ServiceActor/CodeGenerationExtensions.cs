@@ -112,5 +112,8 @@ namespace ServiceActor
             throw new NotSupportedException();
         }
 
+        public static bool Implements(this Type actualType, Type interfaceType) => interfaceType.IsAssignableFrom(actualType) ||
+                actualType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
+
     }
 }
