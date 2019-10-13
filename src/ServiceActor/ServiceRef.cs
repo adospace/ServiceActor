@@ -268,7 +268,7 @@ namespace ServiceActor
         {
             var serviceActionWrapper = serviceObject as IServiceActorWrapper;
 
-            if (serviceObject == null)
+            if (serviceActionWrapper == null)
             {
                 throw new ArgumentException("Service object argument is not a wrapper for a service");
             }
@@ -298,7 +298,7 @@ namespace ServiceActor
         {
             var serviceActionWrapper = serviceObject as IServiceActorWrapper;
 
-            if (serviceObject == null)
+            if (serviceActionWrapper == null)
             {
                 throw new ArgumentException("Service object argument is not a wrapper for a service");
             }
