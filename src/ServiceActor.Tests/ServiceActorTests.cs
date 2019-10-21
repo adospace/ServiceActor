@@ -557,7 +557,7 @@ namespace ServiceActor.Tests
         {
             var service = ServiceRef.Create<IServiceWithException>(new ServiceWithException());
 
-            Assert.ThrowsException<IndexOutOfRangeException>(()=> service.MethodThatRaiseException());
+            Assert.ThrowsException<IndexOutOfRangeException>(() => service.MethodThatRaiseException());
             Assert.ThrowsException<NotImplementedException>(() => service.PropertyThatRaiseException);
         }
 
@@ -790,8 +790,42 @@ namespace ServiceActor.Tests
             Assert.ThrowsException<InvalidOperationException>(() => ServiceRef.CreateFor<IService1>(service2Ref));
 
             Assert.IsNull(ServiceRef.CreateFor<IService1>(new MyServiceNotImplementingService1(), throwIfNotFound: false));
-            
+
             Assert.IsNull(ServiceRef.CreateFor<IService1>(service2Ref, throwIfNotFound: false));
+        }
+
+
+        public interface IAmbiguousCallTestService1
+        {
+            double Value { get; }
+        }
+
+        public interface IAmbiguousCallTestService2<T>
+        {
+            T Value { get; }
+        }
+
+        private class AmbiguousCallTestServiceBaseService : IAmbiguousCallTestService2<int>
+        {
+            public int Value { get; }
+        }
+
+        private class AmbiguousCallTestService : AmbiguousCallTestServiceBaseService, IAmbiguousCallTestService1
+        {
+            public new double Value { get; }
+        }
+
+        [TestMethod]
+        public void TestAmbiguousCallTestService()
+        {
+            var service1Ref = ServiceRef.Create<IAmbiguousCallTestService1>(new AmbiguousCallTestService());
+
+            Assert.IsNotNull(service1Ref);
+
+            var service2Ref = ServiceRef.Create<IAmbiguousCallTestService2<int>>(new AmbiguousCallTestService());
+
+            Assert.IsNotNull(service2Ref);
+
         }
     }
 }

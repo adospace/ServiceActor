@@ -107,7 +107,7 @@ namespace ServiceActor
 
         private bool PropertyGetAllowsConcurrentAccess(PropertyInfo propertyInfo)
         {
-            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetPropertyEx(propertyInfo), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
             {
                 return concurrentAccessAttributeOfActualType.PropertyGet;
             }
@@ -122,7 +122,7 @@ namespace ServiceActor
 
         private bool PropertySetAllowsConcurrentAccess(PropertyInfo propertyInfo)
         {
-            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetPropertyEx(propertyInfo), typeof(AllowConcurrentAccessAttribute)) is AllowConcurrentAccessAttribute concurrentAccessAttributeOfActualType)
             {
                 return concurrentAccessAttributeOfActualType.PropertySet;
             }
@@ -185,7 +185,7 @@ namespace ServiceActor
 
         private bool BlockCaller(PropertyInfo propertyInfo)
         {
-            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetPropertyEx(propertyInfo), typeof(BlockCallerAttribute)) is BlockCallerAttribute)
             {
                 return true;
             }
@@ -244,7 +244,7 @@ namespace ServiceActor
 
         private bool KeepAsyncContext(PropertyInfo propertyInfo)
         {
-            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetProperty(propertyInfo.Name), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
+            if (Attribute.GetCustomAttribute(TypeOfObjectToWrap.GetPropertyEx(propertyInfo), typeof(KeepAsyncContextAttribute)) is KeepAsyncContextAttribute keepAsyncContextAttributeOfActualType)
             {
                 return keepAsyncContextAttributeOfActualType.KeepContext;
             }
