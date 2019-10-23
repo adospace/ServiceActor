@@ -1,17 +1,13 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Nito.AsyncEx;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,13 +15,76 @@ namespace ServiceActor
 {
     public static class ServiceRef
     {
-
+        private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
+        private readonly static ConcurrentDictionary<(Type, Type), Lazy<Type>> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Lazy<Type>>();
         private static readonly ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>>();
 
-        private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
+        /// <summary>
+        /// Path to cache folder or null to let ServiceActor create one in SpecialFolder.ApplicationData\ServiceActor
+        /// </summary>
+        public static string CachePath { get; set; }
+
+        /// <summary>
+        /// Enable cache or service wrappers
+        /// </summary>
+        public static bool EnableCache { get; set; } = true;
+
+        /// <summary>
+        /// Execute <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/>
+        /// </summary>
+        /// <param name="serviceObject">Service implementation or wrapper</param>
+        /// <param name="actionToExecute">Action to execute in the queue of <paramref name="serviceObject"/></param>
+        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
+        public static void Call(object serviceObject, Action actionToExecute, bool createWrapperIfNotExists = false)
+        {
+            InternalCall(serviceObject, actionToExecute, createWrapperIfNotExists);
+        }
+
+        /// <summary>
+        /// Execure <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/> waiting for the call to be completed
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serviceObject">Service implementation or wrapper</param>
+        /// <param name="actionToExecute">Action to execute in the queue of <paramref name="serviceObject"/></param>
+        /// <param name="cancellationToken">Cancellation token used for the call</param>
+        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
+        /// <returns>Task that can be awaited</returns>
+        public static Task CallAndWaitAsync(object serviceObject, Action actionToExecute, CancellationToken cancellationToken = default, bool createWrapperIfNotExists = false)
+        {
+            var actionQueue = InternalCall(serviceObject, actionToExecute, createWrapperIfNotExists);
+
+            var completionEvent = new AsyncAutoResetEvent(false);
+
+            actionQueue.Enqueue(() => completionEvent.Set());
+
+            if (cancellationToken != default)
+            {
+                return completionEvent.WaitAsync(cancellationToken);
+            }
+            else
+            {
+                return completionEvent.WaitAsync();
+            }
+        }
+
+        /// <summary>
+        /// Clear cache of service wrappers
+        /// </summary>
+        public static void ClearCache()
+        {
+            if (EnableCache)
+            {
+                var assemblyCacheFolder = CachePath ??
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", Utils.MD5Hash(Assembly.GetEntryAssembly().Location));
+                if (Directory.Exists(assemblyCacheFolder))
+                {
+                    Directory.Delete(assemblyCacheFolder, true);
+                }
+            }
+        }
 
         public static T Create<T>(T objectToWrap, object aggregateKey = null) where T : class
-            => CreateFor<T>(objectToWrap, aggregateKey);
+                                                    => CreateFor<T>(objectToWrap, aggregateKey);
 
         /// <summary>
         /// Get or create a synchronization wrapper around <paramref name="objectToWrap"/>
@@ -99,23 +158,106 @@ namespace ServiceActor
             return (T)wrapper;
         }
 
-        private readonly static ConcurrentDictionary<(Type, Type), Lazy<Type>> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Lazy<Type>>();
-
-        public static bool EnableCache { get; set; } = true;
-
-        public static string CachePath { get; set; }
-
-        public static void ClearCache()
+        public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
         {
-            if (EnableCache)
+            if (wrapper is IServiceActorWrapper serviceActorWrapper)
             {
-                var assemblyCacheFolder = CachePath ??
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", MD5Hash(Assembly.GetEntryAssembly().Location));
-                if (Directory.Exists(assemblyCacheFolder))
-                {
-                    Directory.Delete(assemblyCacheFolder, true);
-                }
+                wrappedObject = (T)serviceActorWrapper.WrappedObject;
+                return true;
             }
+
+            if (wrapper is T)
+            {
+                wrappedObject = (T)wrapper;
+                return true;
+            }
+
+            wrappedObject = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Wait that call queue for a service is completed; i.e. all pending calls for the service are executed
+        /// </summary>
+        /// <param name="serviceObject">Service object whose call queue has to be awaited</param>
+        /// <param name="millisecondsTimeout">Timeout while wait for completion</param>
+        /// <returns>True if call queue has been completed</returns>
+        /// <remarks>This function has to be considered as an helper while testing services.</remarks>
+        public static bool WaitForCallQueueCompletion(object serviceObject, int millisecondsTimeout = 0)
+        {
+            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
+
+            if (serviceActionWrapper == null)
+            {
+                throw new ArgumentException("Service object argument is not a wrapper for a service");
+            }
+
+            using (var completionEvent = new AutoResetEvent(false))
+            {
+                serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
+
+                if (millisecondsTimeout > 0)
+                {
+                    return completionEvent.WaitOne(millisecondsTimeout);
+                }
+
+                completionEvent.WaitOne();
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Async wait for a call queue to a service to complete
+        /// </summary>
+        /// <param name="serviceObject">Service object to wait call queue completion</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
+        /// <returns></returns>
+        /// <remarks>This an helper function useful while testing services</remarks>
+        public static Task WaitForCallQueueCompletionAsync(object serviceObject, CancellationToken cancellationToken = default)
+        {
+            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
+
+            if (serviceActionWrapper == null)
+            {
+                throw new ArgumentException("Service object argument is not a wrapper for a service");
+            }
+
+            var completionEvent = new AsyncAutoResetEvent(false);
+
+            serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
+
+            if (cancellationToken != default)
+            {
+                return completionEvent.WaitAsync(cancellationToken);
+            }
+            else
+            {
+                return completionEvent.WaitAsync();
+            }
+        }
+
+        private static ActionQueue GetActionQueueFor(object objectToWrap, Type typeToWrap, object aggregateKey)
+        {
+            if (aggregateKey != null)
+            {
+                return _queuesCache.AddOrUpdate(
+                    aggregateKey,
+                    new ActionQueue(aggregateKey.ToString()),
+                    (key, oldValue) => oldValue);
+            }
+
+            if (Attribute.GetCustomAttribute(typeToWrap, typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
+            {
+                return _queuesCache.AddOrUpdate(
+                    serviceDomain.DomainKey,
+                    new ActionQueue(serviceDomain.DomainKey.ToString()),
+                    (key, oldValue) => oldValue);
+            }
+
+            return _queuesCache.AddOrUpdate(
+                objectToWrap.GetHashCode().ToString(),
+                new ActionQueue(objectToWrap.GetType().FullName),
+                (key, oldValue) => oldValue);
         }
 
         private static object GetOrCreateWrapper(Type interfaceType, object objectToWrap, ActionQueue actionQueue)
@@ -133,10 +275,10 @@ namespace ServiceActor
                 if (EnableCache)
                 {
                     var assemblyCacheFolder = CachePath ??
-                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", MD5Hash(Assembly.GetEntryAssembly().Location));
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ServiceActor", Utils.MD5Hash(Assembly.GetEntryAssembly().Location));
                     Directory.CreateDirectory(assemblyCacheFolder);
 
-                    assemblyFilePath = Path.Combine(assemblyCacheFolder, MD5Hash(source) + ".dll");
+                    assemblyFilePath = Path.Combine(assemblyCacheFolder, Utils.MD5Hash(source) + ".dll");
 
                     if (File.Exists(assemblyFilePath))
                     {
@@ -187,33 +329,11 @@ namespace ServiceActor
                     .First(_ => _.GetInterface("IServiceActorWrapper") != null);
             }));
 
-            //return new <#= TypeToWrapName #>AsyncActorWrapper((<#= TypeToWrapFullName #>)ObjectToWrap, "<#= TypeToWrapFullName #>", ActionQueueToShare);
             return Activator.CreateInstance(
                 wrapperImplType.Value, objectToWrap, sourceTemplate.TypeToWrapFullName, actionQueue);
         }
 
-        private static string MD5Hash(string input)
-        {
-            using (var md5provider = new MD5CryptoServiceProvider())
-            {
-                byte[] bytes = md5provider.ComputeHash(new UTF8Encoding().GetBytes(input));
-
-                var hash = new StringBuilder();
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    hash.Append(bytes[i].ToString("x2"));
-                }
-                return hash.ToString();
-            }
-        }
-
-        /// <summary>
-        /// Execute <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/>
-        /// </summary>
-        /// <param name="serviceObject">Service implementation or wrapper</param>
-        /// <param name="actionToExecute">Action to execute in the queue of <paramref name="serviceObject"/></param>
-        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
-        public static void Call(object serviceObject, Action actionToExecute, bool createWrapperIfNotExists = false)
+        private static ActionQueue InternalCall(object serviceObject, Action actionToExecute, bool createWrapperIfNotExists = false)
         {
             if (serviceObject == null)
             {
@@ -255,71 +375,13 @@ namespace ServiceActor
             }
 
             actionQueue.Enqueue(actionToExecute);
-        }
-
-        /// <summary>
-        /// Wait that call queue for a service is completed; i.e. all pending calls for the service are executed
-        /// </summary>
-        /// <param name="serviceObject">Service object whose call queue has to be awaited</param>
-        /// <param name="millisecondsTimeout">Timeout while wait for completion</param>
-        /// <returns>True if call queue has been completed</returns>
-        /// <remarks>This function has to be considered as an helper while testing services.</remarks>
-        public static bool WaitForCallQueueCompletion(object serviceObject, int millisecondsTimeout = 0)
-        {
-            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
-
-            if (serviceActionWrapper == null)
-            {
-                throw new ArgumentException("Service object argument is not a wrapper for a service");
-            }
-
-            using (var completionEvent = new AutoResetEvent(false))
-            {
-                serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
-
-                if (millisecondsTimeout > 0)
-                {
-                    return completionEvent.WaitOne(millisecondsTimeout);
-                }
-
-                completionEvent.WaitOne();
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Async wait for a call queue to a service to complete
-        /// </summary>
-        /// <param name="serviceObject">Service object to wait call queue completion</param>
-        /// <param name="cancellationToken">Optional cancellation token</param>
-        /// <returns></returns>
-        /// <remarks>This an helper function useful while testing services</remarks>
-        public static Task WaitForCallQueueCompletionAsync(object serviceObject, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
-
-            if (serviceActionWrapper == null)
-            {
-                throw new ArgumentException("Service object argument is not a wrapper for a service");
-            }
-
-            var completionEvent = new AsyncAutoResetEvent(false);
-
-            serviceActionWrapper.ActionQueue.Enqueue(() => completionEvent.Set());
-
-            if (cancellationToken != default)
-            {
-                return completionEvent.WaitAsync(cancellationToken);
-            }
-            else
-            {
-                return completionEvent.WaitAsync();
-            }
+            return actionQueue;
         }
 
         #region Pending Operation
 
         #region Pending Operations
+
         public static void RegisterPendingOperation(object objectWrapped, IPendingOperation pendingOperation)
         {
             if (objectWrapped == null)
@@ -356,7 +418,6 @@ namespace ServiceActor
                 }
             }
 
-
             if (actionQueue == null)
             {
                 throw new InvalidOperationException($"Object {objectWrapped} of type '{objectWrapped.GetType()}' is not managed by ServiceActor: call ServiceRef.Create<> to create a service actor for it");
@@ -384,52 +445,9 @@ namespace ServiceActor
 
             RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds, actionOnCompletion));
         }
-        #endregion
 
-        #endregion
+        #endregion Pending Operations
 
-        private static ActionQueue GetActionQueueFor(object objectToWrap, Type typeToWrap, object aggregateKey)
-        {
-            if (aggregateKey != null)
-            {
-                return _queuesCache.AddOrUpdate(
-                    aggregateKey,
-                    new ActionQueue(aggregateKey.ToString()),
-                    (key, oldValue) => oldValue);
-            }
-
-            if (Attribute.GetCustomAttribute(typeToWrap, typeof(ServiceDomainAttribute)) is ServiceDomainAttribute serviceDomain)
-            {
-                return _queuesCache.AddOrUpdate(
-                    serviceDomain.DomainKey,
-                    new ActionQueue(serviceDomain.DomainKey.ToString()),
-                    (key, oldValue) => oldValue);
-            }
-
-            return _queuesCache.AddOrUpdate(
-                objectToWrap.GetHashCode().ToString(),
-                new ActionQueue(objectToWrap.GetType().FullName),
-                (key, oldValue) => oldValue);
-        }
-
-        public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
-        {
-            if (wrapper is IServiceActorWrapper serviceActorWrapper)
-            {
-                wrappedObject = (T)serviceActorWrapper.WrappedObject;
-                return true;
-            }
-
-            if (wrapper is T)
-            {
-                wrappedObject = (T)wrapper;
-                return true;
-            }
-
-            wrappedObject = null;
-            return false;
-        }
-
+        #endregion Pending Operation
     }
-
 }
