@@ -55,7 +55,7 @@ Task.WaitAll(
     Enumerable
     .Range(0, 10)
     .Select(_ =>
-        Task.Factory.StartNew(() =>
+        Task.Run(() =>
         {
             counter.Increment();
         }))
@@ -102,7 +102,7 @@ Task.WaitAll(
     Enumerable
     .Range(0, 10)
     .Select(_ =>
-        Task.Factory.StartNew(() =>
+        Task.Run(() =>
         {
             counter.Increment();
         }))
