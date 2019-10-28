@@ -37,8 +37,20 @@ namespace ServiceActor
         /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
         public static void Call(object serviceObject, Action actionToExecute, bool createWrapperIfNotExists = false)
         {
-            InternalCall(serviceObject, actionToExecute, createWrapperIfNotExists);
+            InternalCall(serviceObject, actionToExecute, null, createWrapperIfNotExists);
         }
+
+        /// <summary>
+        /// Execute <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/>
+        /// </summary>
+        /// <param name="serviceObject">Service implementation or wrapper</param>
+        /// <param name="asyncActionToExecute">Async action to execute in the queue of <paramref name="serviceObject"/></param>
+        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
+        public static void Call(object serviceObject, Func<Task> asyncActionToExecute, bool createWrapperIfNotExists = false)
+        {
+            InternalCall(serviceObject, null, asyncActionToExecute, createWrapperIfNotExists);
+        }
+
 
         /// <summary>
         /// Execure <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/> waiting for the call to be completed
@@ -51,7 +63,7 @@ namespace ServiceActor
         /// <returns>Task that can be awaited</returns>
         public static Task CallAndWaitAsync(object serviceObject, Action actionToExecute, CancellationToken cancellationToken = default, bool createWrapperIfNotExists = false)
         {
-            var actionQueue = InternalCall(serviceObject, actionToExecute, createWrapperIfNotExists);
+            var actionQueue = InternalCall(serviceObject, actionToExecute, null, createWrapperIfNotExists);
 
             var completionEvent = new AsyncAutoResetEvent(false);
 
@@ -66,6 +78,34 @@ namespace ServiceActor
                 return completionEvent.WaitAsync();
             }
         }
+
+        /// <summary>
+        /// Execure <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/> waiting for the call to be completed
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serviceObject">Service implementation or wrapper</param>
+        /// <param name="asyncActionToExecute">Async action to execute in the queue of <paramref name="serviceObject"/></param>
+        /// <param name="cancellationToken">Cancellation token used for the call</param>
+        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
+        /// <returns>Task that can be awaited</returns>
+        public static Task CallAndWaitAsync(object serviceObject, Func<Task> asyncActionToExecute, CancellationToken cancellationToken = default, bool createWrapperIfNotExists = false)
+        {
+            var actionQueue = InternalCall(serviceObject, null, asyncActionToExecute, createWrapperIfNotExists);
+
+            var completionEvent = new AsyncAutoResetEvent(false);
+
+            actionQueue.Enqueue(() => completionEvent.Set());
+
+            if (cancellationToken != default)
+            {
+                return completionEvent.WaitAsync(cancellationToken);
+            }
+            else
+            {
+                return completionEvent.WaitAsync();
+            }
+        }
+
 
         /// <summary>
         /// Clear cache of service wrappers
@@ -333,14 +373,14 @@ namespace ServiceActor
                 wrapperImplType.Value, objectToWrap, sourceTemplate.TypeToWrapFullName, actionQueue);
         }
 
-        private static ActionQueue InternalCall(object serviceObject, Action actionToExecute, bool createWrapperIfNotExists = false)
+        private static ActionQueue InternalCall(object serviceObject, Action actionToExecute = null, Func<Task> asyncActionToAxecute = null, bool createWrapperIfNotExists = false)
         {
             if (serviceObject == null)
             {
                 throw new ArgumentNullException(nameof(serviceObject));
             }
 
-            if (actionToExecute == null)
+            if (actionToExecute == null && asyncActionToAxecute == null)
             {
                 throw new ArgumentNullException(nameof(actionToExecute));
             }
@@ -374,13 +414,13 @@ namespace ServiceActor
                 throw new InvalidOperationException("Unable to get the action queue for the object: create a wrapper for the object with ServiceRef.Create<> first");
             }
 
-            actionQueue.Enqueue(actionToExecute);
+            if (actionToExecute != null)
+                actionQueue.Enqueue(actionToExecute);
+            else
+                actionQueue.EnqueueAsync(asyncActionToAxecute);
+
             return actionQueue;
         }
-
-        #region Pending Operation
-
-        #region Pending Operations
 
         public static void RegisterPendingOperation(object objectWrapped, IPendingOperation pendingOperation)
         {
@@ -445,9 +485,5 @@ namespace ServiceActor
 
             RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds, actionOnCompletion));
         }
-
-        #endregion Pending Operations
-
-        #endregion Pending Operation
     }
 }
