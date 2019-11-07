@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace ServiceActor
 {
@@ -18,6 +19,8 @@ namespace ServiceActor
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
         private readonly static ConcurrentDictionary<(Type, Type), Lazy<Type>> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Lazy<Type>>();
         private static readonly ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>>();
+        private static Assembly _netstandardAssembly;
+        private static Assembly _systemRuntimeAssembly;
 
         /// <summary>
         /// Path to cache folder or null to let ServiceActor create one in SpecialFolder.ApplicationData\ServiceActor
@@ -225,9 +228,7 @@ namespace ServiceActor
         /// <remarks>This function has to be considered as an helper while testing services.</remarks>
         public static bool WaitForCallQueueCompletion(object serviceObject, int millisecondsTimeout = 0)
         {
-            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
-
-            if (serviceActionWrapper == null)
+            if (!(serviceObject is IServiceActorWrapper serviceActionWrapper))
             {
                 throw new ArgumentException("Service object argument is not a wrapper for a service");
             }
@@ -329,22 +330,48 @@ namespace ServiceActor
                     }
                 }
 
-                var script = CSharpScript.Create(
-                    source,
-                    options: ScriptOptions.Default.AddReferences(
-                        Assembly.GetExecutingAssembly(),
-                        interfaceType.Assembly,
-                        implType.Assembly,
-                        typeof(AsyncAutoResetEvent).Assembly)
-                    );
+                var sourceSyntaxTree = CSharpSyntaxTree.ParseText(source);
 
-                var diagnostics = script.Compile();
-                if (diagnostics.Any())
+                _systemRuntimeAssembly = _systemRuntimeAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
+                    .Single(_ => _.ManifestModule.Name == "System.Runtime.dll");
+
+                _netstandardAssembly = _netstandardAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
+                    .Single(_ => _.ManifestModule.Name == "netstandard.dll");
+
+                string assemblyName = Path.GetRandomFileName();
+                var references = new MetadataReference[]
                 {
-                    throw new InvalidOperationException();
-                }
+                    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                    MetadataReference.CreateFromFile(_systemRuntimeAssembly.Location),
+                    MetadataReference.CreateFromFile(_netstandardAssembly.Location),
+                    MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location),
+                    MetadataReference.CreateFromFile(interfaceType.Assembly.Location),
+                    MetadataReference.CreateFromFile(implType.Assembly.Location),
+                    MetadataReference.CreateFromFile(typeof(AsyncAutoResetEvent).Assembly.Location)
+                };
 
-                var compilation = script.GetCompilation();
+                var compilation = CSharpCompilation.Create(
+                    assemblyName,
+                    syntaxTrees: new[] { sourceSyntaxTree },
+                    references: references,
+                    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+                //var script = CSharpScript.Create(
+                //    source,
+                //    options: ScriptOptions.Default.AddReferences(
+                //        Assembly.GetExecutingAssembly(),
+                //        interfaceType.Assembly,
+                //        implType.Assembly,
+                //        typeof(AsyncAutoResetEvent).Assembly)
+                //    );
+
+                //var diagnostics = script.Compile();
+                //if (diagnostics.Any())
+                //{
+                //    throw new InvalidOperationException();
+                //}
+
+                //var compilation = script.GetCompilation();
 
                 Assembly generatedAssembly;
                 using (var dllStream = new MemoryStream())
