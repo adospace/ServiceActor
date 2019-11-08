@@ -57,9 +57,45 @@ namespace ServiceActor
             InternalCall(serviceObject, null, asyncActionToExecute, createWrapperIfNotExists);
         }
 
+        /// <summary>
+        /// Execute <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/> and wait for the call to be completed
+        /// </summary>
+        /// <param name="serviceObject">Service implementation or wrapper</param>
+        /// <param name="actionToExecute">Action to execute in the queue of <paramref name="serviceObject"/></param>
+        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
+        public static void CallAndWait(object serviceObject, Action actionToExecute, bool createWrapperIfNotExists = false)
+        {
+            var actionQueue = InternalCall(serviceObject, actionToExecute, null, createWrapperIfNotExists);
+
+            using (var completionEvent = new AutoResetEvent(false))
+            {
+                actionQueue.Enqueue(() => completionEvent.Set());
+
+                completionEvent.WaitOne();
+            }
+        }
 
         /// <summary>
         /// Execure <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/> waiting for the call to be completed
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serviceObject">Service implementation or wrapper</param>
+        /// <param name="asyncActionToExecute">Async action to execute in the queue of <paramref name="serviceObject"/></param>
+        /// <param name="createWrapperIfNotExists">Generate a wrapper for the object on the fly if it doesn't exist</param>
+        public static void CallAndWait(object serviceObject, Func<Task> asyncActionToExecute, bool createWrapperIfNotExists = false)
+        {
+            var actionQueue = InternalCall(serviceObject, null, asyncActionToExecute, createWrapperIfNotExists);
+
+            using (var completionEvent = new AutoResetEvent(false))
+            {
+                actionQueue.Enqueue(() => completionEvent.Set());
+
+                completionEvent.WaitOne();
+            }
+        }
+
+        /// <summary>
+        /// Execute <paramref name="actionToExecute"/> in the same queue of <paramref name="serviceObject"/> waiting for the call to be completed
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="serviceObject">Service implementation or wrapper</param>
