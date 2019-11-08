@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 namespace ServiceActor
 {
@@ -19,8 +20,10 @@ namespace ServiceActor
         private static readonly ConcurrentDictionary<object, ActionQueue> _queuesCache = new ConcurrentDictionary<object, ActionQueue>();
         private readonly static ConcurrentDictionary<(Type, Type), Lazy<Type>> _wrapperAssemblyCache = new ConcurrentDictionary<(Type, Type), Lazy<Type>>();
         private static readonly ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>> _wrappersCache = new ConditionalWeakTable<object, ConcurrentDictionary<(Type, Type), object>>();
-        private static Assembly _netstandardAssembly;
-        private static Assembly _systemRuntimeAssembly;
+
+        private static InteractiveAssemblyLoader _cachedAssemblyResolver;
+        //private static Assembly _netstandardAssembly;
+        //private static Assembly _systemRuntimeAssembly;
 
         /// <summary>
         /// Path to cache folder or null to let ServiceActor create one in SpecialFolder.ApplicationData\ServiceActor
@@ -256,9 +259,7 @@ namespace ServiceActor
         /// <remarks>This an helper function useful while testing services</remarks>
         public static Task WaitForCallQueueCompletionAsync(object serviceObject, CancellationToken cancellationToken = default)
         {
-            var serviceActionWrapper = serviceObject as IServiceActorWrapper;
-
-            if (serviceActionWrapper == null)
+            if (!(serviceObject is IServiceActorWrapper serviceActionWrapper))
             {
                 throw new ArgumentException("Service object argument is not a wrapper for a service");
             }
@@ -332,47 +333,57 @@ namespace ServiceActor
 
                 var sourceSyntaxTree = CSharpSyntaxTree.ParseText(source);
 
-                _systemRuntimeAssembly = _systemRuntimeAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
-                    .Single(_ => _.ManifestModule.Name == "System.Runtime.dll");
+                //_systemRuntimeAssembly = _systemRuntimeAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
+                //    .Single(_ => _.ManifestModule.Name == "System.Runtime.dll");
 
-                _netstandardAssembly = _netstandardAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
-                    .Single(_ => _.ManifestModule.Name == "netstandard.dll");
+                //_netstandardAssembly = _netstandardAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
+                //    .Single(_ => _.ManifestModule.Name == "netstandard.dll");
 
-                string assemblyName = Path.GetRandomFileName();
-                var references = new MetadataReference[]
-                {
-                    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                    MetadataReference.CreateFromFile(_systemRuntimeAssembly.Location),
-                    MetadataReference.CreateFromFile(_netstandardAssembly.Location),
-                    MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location),
-                    MetadataReference.CreateFromFile(interfaceType.Assembly.Location),
-                    MetadataReference.CreateFromFile(implType.Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(AsyncAutoResetEvent).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(CSharpCompilationOptions).Assembly.Location)
-                };
-
-                var compilation = CSharpCompilation.Create(
-                    assemblyName,
-                    syntaxTrees: new[] {sourceSyntaxTree},
-                    references: references,
-                    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-                //var script = CSharpScript.Create(
-                //    source,
-                //    options: ScriptOptions.Default.AddReferences(
-                //        Assembly.GetExecutingAssembly(),
-                //        interfaceType.Assembly,
-                //        implType.Assembly,
-                //        typeof(AsyncAutoResetEvent).Assembly)
-                //    );
-
-                //var diagnostics = script.Compile();
-                //if (diagnostics.Any())
+                //string assemblyName = Path.GetRandomFileName();
+                //var references = new MetadataReference[]
                 //{
-                //    throw new InvalidOperationException();
-                //}
+                //    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                //    MetadataReference.CreateFromFile(_systemRuntimeAssembly.Location),
+                //    MetadataReference.CreateFromFile(_netstandardAssembly.Location),
+                //    MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location),
+                //    MetadataReference.CreateFromFile(interfaceType.Assembly.Location),
+                //    MetadataReference.CreateFromFile(implType.Assembly.Location),
+                //    MetadataReference.CreateFromFile(typeof(AsyncAutoResetEvent).Assembly.Location)//,
+                //    //MetadataReference.CreateFromFile(typeof(CSharpCompilationOptions).Assembly.Location)
+                //};
 
-                //var compilation = script.GetCompilation();
+                //var compilation = CSharpCompilation.Create(
+                //    assemblyName,
+                //    syntaxTrees: new[] {sourceSyntaxTree},
+                //    references: references,
+                //    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+                if (_cachedAssemblyResolver == null)
+                {
+                    _cachedAssemblyResolver = new InteractiveAssemblyLoader();
+                    _cachedAssemblyResolver.RegisterDependency(Assembly.GetExecutingAssembly());
+                    _cachedAssemblyResolver.RegisterDependency(interfaceType.Assembly);
+                    _cachedAssemblyResolver.RegisterDependency(implType.Assembly);
+                    _cachedAssemblyResolver.RegisterDependency(typeof(AsyncAutoResetEvent).Assembly);
+                }
+
+                var script = CSharpScript.Create(
+                    source,
+                    options: ScriptOptions.Default.AddReferences(
+                        Assembly.GetExecutingAssembly(),
+                        interfaceType.Assembly,
+                        implType.Assembly,
+                        typeof(AsyncAutoResetEvent).Assembly),
+                        assemblyLoader: _cachedAssemblyResolver
+                    );
+
+                var diagnostics = script.Compile();
+                if (diagnostics.Any())
+                {
+                    throw new InvalidOperationException();
+                }
+
+                var compilation = script.GetCompilation();
 
                 Assembly generatedAssembly;
                 using (var dllStream = new MemoryStream())
@@ -391,6 +402,7 @@ namespace ServiceActor
 
                     generatedAssembly = Assembly.Load(dllStream.ToArray());
                 }
+
 
                 return generatedAssembly
                     .GetTypes()
