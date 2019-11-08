@@ -63,7 +63,7 @@ namespace ServiceActor
                     {
                         if (invocation.Async)
                         {
-                            await invocation.ActionAsync();
+                            await invocation.ActionAsync().ConfigureAwait(false);
                         }
                         else
                         {
