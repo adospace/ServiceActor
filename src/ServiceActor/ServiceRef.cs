@@ -347,12 +347,13 @@ namespace ServiceActor
                     MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location),
                     MetadataReference.CreateFromFile(interfaceType.Assembly.Location),
                     MetadataReference.CreateFromFile(implType.Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(AsyncAutoResetEvent).Assembly.Location)
+                    MetadataReference.CreateFromFile(typeof(AsyncAutoResetEvent).Assembly.Location),
+                    MetadataReference.CreateFromFile(typeof(CSharpCompilationOptions).Assembly.Location)
                 };
 
                 var compilation = CSharpCompilation.Create(
                     assemblyName,
-                    syntaxTrees: new[] { sourceSyntaxTree },
+                    syntaxTrees: new[] {sourceSyntaxTree},
                     references: references,
                     options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
