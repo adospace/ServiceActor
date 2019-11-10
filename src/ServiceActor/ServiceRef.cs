@@ -380,15 +380,16 @@ namespace ServiceActor
 
                 var script = CSharpScript.Create(
                     source,
-                    options: ScriptOptions.Default.AddReferences(
-                        Assembly.GetExecutingAssembly(),
-                        interfaceType.Assembly,
-                        implType.Assembly,
-                        typeof(AsyncAutoResetEvent).Assembly)
+                    assemblyLoader: _cachedAssemblyResolver,
+                    options: ScriptOptions.Default
+                        .AddReferences(
+                            Assembly.GetExecutingAssembly(),
+                            interfaceType.Assembly,
+                            implType.Assembly,
+                            typeof(AsyncAutoResetEvent).Assembly)
 #if DEBUG
-                    .WithEmitDebugInformation(true),
+                        .WithEmitDebugInformation(true)
 #endif
-                        assemblyLoader: _cachedAssemblyResolver
                     );
 
                 var diagnostics = script.Compile();
@@ -403,9 +404,12 @@ namespace ServiceActor
                 using (var dllStream = new MemoryStream())
 #if DEBUG
                 using (var dllPdbStream = new MemoryStream())
-#endif
                 {
                     var emitResult = compilation.Emit(dllStream, dllPdbStream);
+#else
+                {
+                    var emitResult = compilation.Emit(dllStream);
+#endif
                     if (!emitResult.Success)
                     {
                         // emitResult.Diagnostics
