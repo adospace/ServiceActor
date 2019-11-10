@@ -6,12 +6,6 @@ namespace ServiceActor
 {
     public interface IPendingOperation
     {
-        bool WaitForCompletion();
-
-    }
-
-    public interface IPendingOperationWithResult : IPendingOperation
-    {
-        object GetResult();
+        void Complete();
     }
 }

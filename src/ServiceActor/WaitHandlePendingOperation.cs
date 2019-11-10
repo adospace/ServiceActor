@@ -1,24 +1,36 @@
-﻿using System;
+﻿using Nito.AsyncEx;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ServiceActor
 {
-    public class WaitHandlerPendingOperation : IPendingOperation
+    internal class WaitHandlerPendingOperation : IPendingOperationOnAction, IPendingOperation
     {
-        private readonly WaitHandle _waitHandler;
+        private readonly AutoResetEvent _waitHandler = new AutoResetEvent(false);
+        private readonly AsyncAutoResetEvent _waitHandlerAsync = new AsyncAutoResetEvent();
         private readonly int _timeoutMilliseconds;
         private readonly Action<bool> _actionAfterCompletion;
 
         public WaitHandlerPendingOperation(
-            WaitHandle waitHandler, 
             int timeoutMilliseconds = 0,
             Action<bool> actionAfterCompletion = null)
         {
-            _waitHandler = waitHandler ?? throw new ArgumentNullException(nameof(waitHandler));
+            if (timeoutMilliseconds < 0)
+            {
+                throw new ArgumentException(nameof(timeoutMilliseconds));
+            }
+
             _timeoutMilliseconds = timeoutMilliseconds;
             _actionAfterCompletion = actionAfterCompletion;
+        }
+
+        public void Complete()
+        {
+            _waitHandler.Set();
+            _waitHandlerAsync.Set();
         }
 
         public bool WaitForCompletion()
@@ -31,18 +43,45 @@ namespace ServiceActor
 
             return completed;
         }
+
+        public async Task<bool> WaitForCompletionAsync()
+        {
+            bool completed = false;
+            if (_timeoutMilliseconds > 0)
+            {
+                using (var timeoutTokenSource = new CancellationTokenSource(_timeoutMilliseconds))
+                {
+                    try
+                    {
+                        await _waitHandlerAsync.WaitAsync(timeoutTokenSource.Token);
+                        completed = true;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                }
+            }
+            else
+            {
+                await _waitHandlerAsync.WaitAsync();
+                completed = true;
+            }
+
+            _actionAfterCompletion?.Invoke(completed);
+
+            return completed;
+        }
     }
 
-    public class WaitHandlePendingOperation<T> : WaitHandlerPendingOperation, IPendingOperationWithResult
+    internal class WaitHandlePendingOperation<T> : WaitHandlerPendingOperation, IPendingOperationWithResult
     {
         private readonly Func<T> _getResultFunction;
 
         public WaitHandlePendingOperation(
-            WaitHandle waitHandler, 
             Func<T> getResultFunction, 
             int timeoutMilliseconds = 0,
             Action<bool> actionAfterCompletion = null)
-            :base(waitHandler, timeoutMilliseconds, actionAfterCompletion)
+            :base(timeoutMilliseconds, actionAfterCompletion)
         {
             _getResultFunction = getResultFunction ?? throw new ArgumentNullException(nameof(getResultFunction));
         }

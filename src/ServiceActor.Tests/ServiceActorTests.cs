@@ -730,9 +730,8 @@ namespace ServiceActor.Tests
             public void Method()
             {
                 //registering a pending op in a method with BlockCaller attribute should not throw exception
-                var ev = new AutoResetEvent(false);
-                ServiceRef.RegisterPendingOperation(this, ev);
-                ev.Set();
+                var pendingOperation = ServiceRef.RegisterPendingOperation(this);
+                pendingOperation.Complete();
             }
         }
 
@@ -744,7 +743,7 @@ namespace ServiceActor.Tests
                 //registering a pending op in a method without a BlockCaller attribute should throw exception
                 try
                 {
-                    ServiceRef.RegisterPendingOperation(this, new AutoResetEvent(false));
+                    ServiceRef.RegisterPendingOperation(this);
                 }
                 catch (Exception ex)
                 {

@@ -241,12 +241,18 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             }, 
             keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
-            await invocationItem?.WaitExecutedAsync();
+			if (invocationItem != null)
+            {
+				await invocationItem.WaitExecutedAsync();
+			}
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            invocationItem?.WaitForPendingOperationCompletion();
+            if (invocationItem != null)
+			{
+				await invocationItem.WaitForPendingOperationCompletionAsync();
+			}
 
             <# } #>
 
@@ -288,12 +294,15 @@ public class <#= TypeToWrapName #>AsyncActorWrapper : <#= TypeToWrapFullName #>,
             }, 
             keepContextForAsyncCalls: <#= KeepAsyncContext(method) ? "true" : "false" #>);
 
-            await invocationItem?.WaitExecutedAsync();
+			if (invocationItem != null)
+            {
+				await invocationItem.WaitExecutedAsync();
+			}
 
             if (exceptionThrown != null)
                 throw exceptionThrown;
 
-            if (invocationItem != null && invocationItem.WaitForPendingOperationCompletion())
+            if (invocationItem != null && (await invocationItem.WaitForPendingOperationCompletionAsync()))
             {
                 res = invocationItem.GetLastPendingOperationResult<<#= method.Info.ReturnType.GetGenericArguments()[0].GetTypeReferenceCode() #>>();
             }

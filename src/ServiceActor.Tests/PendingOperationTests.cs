@@ -25,10 +25,11 @@ namespace ServiceActor.Tests
         {
             public bool OperationCompleted { get; private set; }
 
-            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
+            private IPendingOperation _pendingOperation;
+
             public void BeginOperation()
             {
-                ServiceRef.RegisterPendingOperation(this, _completedEvent);
+                _pendingOperation = ServiceRef.RegisterPendingOperation(this);
 
                 Task.Factory.StartNew(() =>
                 {
@@ -42,7 +43,7 @@ namespace ServiceActor.Tests
             public void CompleteOperation()
             {
                 OperationCompleted = true;
-                _completedEvent.Set();
+                _pendingOperation.Complete();
             }
         }
 
@@ -78,13 +79,13 @@ namespace ServiceActor.Tests
 
             public bool OperationCompleted { get; private set; }
 
-            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
+            private IPendingOperation _pendingOperation;
             public T Result { get; private set; } = default(T);
             private readonly T _completedResult;
 
             public T BeginOperation()
             {
-                ServiceRef.RegisterPendingOperation(this, _completedEvent, () => Result);
+                _pendingOperation = ServiceRef.RegisterPendingOperation(this, () => Result);
 
                 Task.Factory.StartNew(() =>
                 {
@@ -101,7 +102,7 @@ namespace ServiceActor.Tests
             {
                 Result = result;
                 OperationCompleted = true;
-                _completedEvent.Set();
+                _pendingOperation.Complete();
             }
         }
 
@@ -133,12 +134,12 @@ namespace ServiceActor.Tests
         {
             public bool OperationCompleted { get; private set; }
 
-            private AutoResetEvent _completedEvent = new AutoResetEvent(false);
+            private IPendingOperation _pendingOperation;
             public Task<bool> BeginOperationAsync()
             {
-                ServiceRef.RegisterPendingOperation(this, _completedEvent, () => OperationCompleted);
+                _pendingOperation = ServiceRef.RegisterPendingOperation(this, () => OperationCompleted);
 
-                Task.Factory.StartNew(async () =>
+                Task.Run(async () =>
                 {
                     //simulate some work
                     await Task.Delay(1000);
@@ -152,7 +153,7 @@ namespace ServiceActor.Tests
             public Task CompleteOperationAsync()
             {
                 OperationCompleted = true;
-                _completedEvent.Set();
+                _pendingOperation.Complete();
                 return Task.CompletedTask;
             }
         }
@@ -238,15 +239,15 @@ namespace ServiceActor.Tests
             public Task GetOrDownloadAsync(string url)
             {
                 //simulate image download
-                var downloadedEvent = new AutoResetEvent(false);
+                IPendingOperation pendingOperation = null;
                 Console.WriteLine($"Downloading {url}");
                 Task.Delay(2000).ContinueWith(_=> 
                 {
                     Console.WriteLine($"Downloaded {url}");
-                    downloadedEvent.Set();
+                    pendingOperation.Complete();
                 });
 
-                ServiceRef.RegisterPendingOperation(this, downloadedEvent, actionOnCompletion: (res)=> 
+                pendingOperation = ServiceRef.RegisterPendingOperation(this, actionOnCompletion: (res)=> 
                 {
                     //Accessing _images here would be risky, just wrap the call...
                     ServiceRef.Call(this, () =>

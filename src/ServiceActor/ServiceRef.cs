@@ -369,31 +369,6 @@ namespace ServiceActor
 
                 var sourceSyntaxTree = CSharpSyntaxTree.ParseText(source);
 
-                //_systemRuntimeAssembly = _systemRuntimeAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
-                //    .Single(_ => _.ManifestModule.Name == "System.Runtime.dll");
-
-                //_netstandardAssembly = _netstandardAssembly ?? AppDomain.CurrentDomain.GetAssemblies()
-                //    .Single(_ => _.ManifestModule.Name == "netstandard.dll");
-
-                //string assemblyName = Path.GetRandomFileName();
-                //var references = new MetadataReference[]
-                //{
-                //    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                //    MetadataReference.CreateFromFile(_systemRuntimeAssembly.Location),
-                //    MetadataReference.CreateFromFile(_netstandardAssembly.Location),
-                //    MetadataReference.CreateFromFile(Assembly.GetExecutingAssembly().Location),
-                //    MetadataReference.CreateFromFile(interfaceType.Assembly.Location),
-                //    MetadataReference.CreateFromFile(implType.Assembly.Location),
-                //    MetadataReference.CreateFromFile(typeof(AsyncAutoResetEvent).Assembly.Location)//,
-                //    //MetadataReference.CreateFromFile(typeof(CSharpCompilationOptions).Assembly.Location)
-                //};
-
-                //var compilation = CSharpCompilation.Create(
-                //    assemblyName,
-                //    syntaxTrees: new[] {sourceSyntaxTree},
-                //    references: references,
-                //    options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
                 if (_cachedAssemblyResolver == null)
                 {
                     _cachedAssemblyResolver = new InteractiveAssemblyLoader();
@@ -409,7 +384,10 @@ namespace ServiceActor
                         Assembly.GetExecutingAssembly(),
                         interfaceType.Assembly,
                         implType.Assembly,
-                        typeof(AsyncAutoResetEvent).Assembly),
+                        typeof(AsyncAutoResetEvent).Assembly)
+#if DEBUG
+                    .WithEmitDebugInformation(true),
+#endif
                         assemblyLoader: _cachedAssemblyResolver
                     );
 
@@ -423,8 +401,11 @@ namespace ServiceActor
 
                 Assembly generatedAssembly;
                 using (var dllStream = new MemoryStream())
+#if DEBUG
+                using (var dllPdbStream = new MemoryStream())
+#endif
                 {
-                    var emitResult = compilation.Emit(dllStream);
+                    var emitResult = compilation.Emit(dllStream, dllPdbStream);
                     if (!emitResult.Success)
                     {
                         // emitResult.Diagnostics
@@ -435,8 +416,11 @@ namespace ServiceActor
                     {
                         File.WriteAllBytes(assemblyFilePath, dllStream.ToArray());
                     }
-
+#if DEBUG
+                    generatedAssembly = Assembly.Load(dllStream.ToArray(), dllPdbStream.ToArray());
+#else
                     generatedAssembly = Assembly.Load(dllStream.ToArray());
+#endif
                 }
 
 
@@ -498,7 +482,7 @@ namespace ServiceActor
             return actionQueue;
         }
 
-        public static void RegisterPendingOperation(object objectWrapped, IPendingOperation pendingOperation)
+        private static IPendingOperation RegisterPendingOperation(object objectWrapped, IPendingOperationOnAction pendingOperation)
         {
             if (objectWrapped == null)
             {
@@ -540,26 +524,28 @@ namespace ServiceActor
             }
 
             actionQueue.RegisterPendingOperation(pendingOperation);
+
+            return (IPendingOperation)pendingOperation;
         }
 
-        public static void RegisterPendingOperation(object objectWrapped, WaitHandle waitHandle, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
+        public static IPendingOperation RegisterPendingOperation(object objectWrapped, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
             if (objectWrapped == null)
             {
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(waitHandle, timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(timeoutMilliseconds, actionOnCompletion));
         }
 
-        public static void RegisterPendingOperation<T>(object objectWrapped, WaitHandle waitHandle, Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
+        public static IPendingOperation RegisterPendingOperation<T>(object objectWrapped, Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
             if (objectWrapped == null)
             {
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(getResultFunction, timeoutMilliseconds, actionOnCompletion));
         }
     }
 }

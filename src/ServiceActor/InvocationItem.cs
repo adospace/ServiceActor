@@ -90,9 +90,9 @@ namespace ServiceActor
         public bool Async { get; }
         public bool BlockingCaller { get; }
 
-        private readonly Queue<IPendingOperation> _pendingOperations = new Queue<IPendingOperation>();
+        private readonly Queue<IPendingOperationOnAction> _pendingOperations = new Queue<IPendingOperationOnAction>();
 
-        public void EnqueuePendingOperation(IPendingOperation pendingOperation)
+        internal void EnqueuePendingOperation(IPendingOperationOnAction pendingOperation)
         {
             if (!BlockingCaller)
             {
@@ -113,6 +113,23 @@ namespace ServiceActor
             foreach (var pendingOperation in _pendingOperations)
             {
                 if (!pendingOperation.WaitForCompletion())
+                    completed = false;
+            }
+
+            return completed;
+        }
+
+        public async Task<bool> WaitForPendingOperationCompletionAsync()
+        {
+            if (_pendingOperations.Count == 0)
+            {
+                return false;
+            }
+
+            bool completed = true;
+            foreach (var pendingOperation in _pendingOperations)
+            {
+                if (!await pendingOperation.WaitForCompletionAsync())
                     completed = false;
             }
 

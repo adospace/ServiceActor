@@ -250,7 +250,7 @@ namespace ServiceActor
         #endregion
 
         #region Pending Operations
-        public void RegisterPendingOperation(IPendingOperation pendingOperation)
+        internal IPendingOperation RegisterPendingOperation(IPendingOperationOnAction pendingOperation)
         {
             if (pendingOperation == null)
             {
@@ -263,16 +263,18 @@ namespace ServiceActor
             }
 
             _executingInvocationItem.EnqueuePendingOperation(pendingOperation);
+
+            return (IPendingOperation)pendingOperation;
         }
 
-        public void RegisterPendingOperation(WaitHandle waitHandle, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
+        public IPendingOperation RegisterPendingOperation(int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
-            RegisterPendingOperation(new WaitHandlerPendingOperation(waitHandle, timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(new WaitHandlerPendingOperation(timeoutMilliseconds, actionOnCompletion));
         }
 
-        public void RegisterPendingOperation<T>(WaitHandle waitHandle, Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
+        public IPendingOperation RegisterPendingOperation<T>(Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
-            RegisterPendingOperation(new WaitHandlePendingOperation<T>(waitHandle, getResultFunction, timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(new WaitHandlePendingOperation<T>(getResultFunction, timeoutMilliseconds, actionOnCompletion));
         }
         #endregion
     }
