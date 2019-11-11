@@ -240,6 +240,84 @@ namespace ServiceActor
             return (T)wrapper;
         }
 
+        public static bool TryGet<T>(T objectToWrap, out T wrapper) where T : class
+                                                    => TryGetFor(objectToWrap, out wrapper);
+
+
+        public static bool TryGetFor<T>(object objectToWrap, out T wrapper) where T : class
+        {
+            if (objectToWrap == null)
+            {
+                throw new ArgumentNullException(nameof(objectToWrap));
+            }
+
+            wrapper = null;
+
+            var serviceType = typeof(T);
+
+            if (objectToWrap is IServiceActorWrapper)
+            {
+                //objectToWrap is already a wrapper
+                //test if it's the right interface
+                if (objectToWrap is T)
+                {
+                    wrapper = (T)objectToWrap;
+                    return true;
+                }
+
+                objectToWrap = ((IServiceActorWrapper)objectToWrap).WrappedObject;
+                //throw new ArgumentException($"Parameter is already a wrapper but not for interface '{serviceType}'", nameof(objectToWrap));
+            }
+
+            if (!objectToWrap.GetType().Implements(typeof(T)))
+            {
+                return false;
+                //if (!throwIfNotFound)
+                //    return null;
+
+                //throw new InvalidOperationException($"Object of type '{objectToWrap.GetType()}' does not implement interface '{typeof(T)}'");
+            }
+
+            //NOTE: Do not use AddOrUpdate() to avoid _wrapperCache lock while generating wrapper
+
+            ActionQueue actionQueue = null;
+            var wrapperTypeKey = (serviceType, objectToWrap.GetType());
+
+            if (_wrappersCache.TryGetValue(objectToWrap, out var wrapperTypes))
+            {
+                if (wrapperTypes.TryGetValue(wrapperTypeKey, out var wrapperObject))
+                {
+                    wrapper = (T)wrapperObject;
+                    return true;
+                }
+
+                //use defensive code to get the underling ActionQueue
+                //just to be sure that only one queue is created for a single object
+
+                //var firstWrapper = wrapperTypes.First().Value;
+                //actionQueue = ((IServiceActorWrapper)firstWrapper).ActionQueue;
+
+                actionQueue = wrapperTypes.Values.Cast<IServiceActorWrapper>()
+                    .Select(_ => _.ActionQueue)
+                    .Distinct()
+                    .SingleOrDefault();
+            }
+
+            if (actionQueue == null)
+            {
+                return false;
+            }
+
+            wrapper = (T)GetOrCreateWrapper(serviceType, objectToWrap, actionQueue);
+
+            //there is no need to use a Lazy here as the value factory is not used at all
+            wrapperTypes = _wrappersCache.GetOrCreateValue(objectToWrap);
+
+            wrapperTypes.TryAdd(wrapperTypeKey, wrapper);
+
+            return true;
+        }
+
         public static bool TryGetWrappedObject<T>(object wrapper, out T wrappedObject) where T : class
         {
             if (wrapper is IServiceActorWrapper serviceActorWrapper)

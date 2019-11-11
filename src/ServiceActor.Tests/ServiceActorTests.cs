@@ -248,7 +248,13 @@ namespace ServiceActor.Tests
         [TestMethod]
         public void AccessingPropertyAfterMethodInvocationShouldWork()
         {
-            var counter = ServiceRef.Create<ICounter>(new Counter());
+            var counterService = new Counter();
+
+            Assert.IsFalse(ServiceRef.TryGet<ICounter>(counterService, out var _));
+
+            var counter = ServiceRef.Create<ICounter>(counterService);
+
+            Assert.IsTrue(ServiceRef.TryGet<ICounter>(counterService, out var _));
 
             counter.Increment();
 
