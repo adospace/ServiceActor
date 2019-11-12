@@ -617,7 +617,7 @@ namespace ServiceActor
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            return RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(null, timeoutMilliseconds, actionOnCompletion));
         }
 
         public static IPendingOperation RegisterPendingOperation<T>(object objectWrapped, Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
@@ -627,7 +627,28 @@ namespace ServiceActor
                 throw new ArgumentNullException(nameof(objectWrapped));
             }
 
-            return RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(getResultFunction, timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(getResultFunction, null, timeoutMilliseconds, actionOnCompletion));
         }
+
+        public static void RegisterPendingOperation(object objectWrapped, EventWaitHandle waitHandle, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
+        {
+            if (objectWrapped == null)
+            {
+                throw new ArgumentNullException(nameof(objectWrapped));
+            }
+
+            RegisterPendingOperation(objectWrapped, new WaitHandlerPendingOperation(waitHandle, timeoutMilliseconds, actionOnCompletion));
+        }
+
+        public static void RegisterPendingOperation<T>(object objectWrapped, EventWaitHandle waitHandle, Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
+        {
+            if (objectWrapped == null)
+            {
+                throw new ArgumentNullException(nameof(objectWrapped));
+            }
+
+            RegisterPendingOperation(objectWrapped, new WaitHandlePendingOperation<T>(getResultFunction, waitHandle, timeoutMilliseconds, actionOnCompletion));
+        }
+
     }
 }

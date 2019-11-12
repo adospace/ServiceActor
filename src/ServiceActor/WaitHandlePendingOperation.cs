@@ -9,12 +9,13 @@ namespace ServiceActor
 {
     internal class WaitHandlerPendingOperation : IPendingOperationOnAction, IPendingOperation
     {
-        private readonly AutoResetEvent _waitHandler = new AutoResetEvent(false);
+        private readonly EventWaitHandle _waitHandler;
         private readonly AsyncAutoResetEvent _waitHandlerAsync = new AsyncAutoResetEvent();
         private readonly int _timeoutMilliseconds;
         private readonly Action<bool> _actionAfterCompletion;
 
         public WaitHandlerPendingOperation(
+            EventWaitHandle waitHandler = null,
             int timeoutMilliseconds = 0,
             Action<bool> actionAfterCompletion = null)
         {
@@ -23,6 +24,7 @@ namespace ServiceActor
                 throw new ArgumentException(nameof(timeoutMilliseconds));
             }
 
+            _waitHandler = waitHandler ?? new AutoResetEvent(false);
             _timeoutMilliseconds = timeoutMilliseconds;
             _actionAfterCompletion = actionAfterCompletion;
         }
@@ -78,10 +80,11 @@ namespace ServiceActor
         private readonly Func<T> _getResultFunction;
 
         public WaitHandlePendingOperation(
-            Func<T> getResultFunction, 
+            Func<T> getResultFunction,
+            EventWaitHandle waitHandler = null,
             int timeoutMilliseconds = 0,
             Action<bool> actionAfterCompletion = null)
-            :base(timeoutMilliseconds, actionAfterCompletion)
+            :base(waitHandler, timeoutMilliseconds, actionAfterCompletion)
         {
             _getResultFunction = getResultFunction ?? throw new ArgumentNullException(nameof(getResultFunction));
         }
