@@ -826,5 +826,32 @@ namespace ServiceActor.Tests
             Assert.IsNotNull(service2Ref);
 
         }
+
+
+        public interface IOrderingService
+        {
+            void Set(int newValue);
+        }
+
+        private class OrderingService : IOrderingService
+        {
+            private int _value = 0;
+            public void Set(int newValue)
+            {
+                Assert.AreEqual(newValue, _value + 1);
+                _value = newValue;
+            }
+        }
+
+        [TestMethod]
+        public void TestActionOrdering()
+        {
+            var service = ServiceRef.Create<IOrderingService>(new OrderingService());
+
+            for (int i = 0; i < 1000; i++)
+                service.Set(i + 1);
+
+            ServiceRef.WaitForCallQueueCompletion(service);
+        }
     }
 }
