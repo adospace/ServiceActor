@@ -269,12 +269,12 @@ namespace ServiceActor
 
         public IPendingOperation RegisterPendingOperation(int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
-            return RegisterPendingOperation(new WaitHandlerPendingOperation(timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(new WaitHandlerPendingOperation(null, timeoutMilliseconds, actionOnCompletion));
         }
 
         public IPendingOperation RegisterPendingOperation<T>(Func<T> getResultFunction, int timeoutMilliseconds = 0, Action<bool> actionOnCompletion = null)
         {
-            return RegisterPendingOperation(new WaitHandlePendingOperation<T>(getResultFunction, timeoutMilliseconds, actionOnCompletion));
+            return RegisterPendingOperation(new WaitHandlePendingOperation<T>(getResultFunction, null, timeoutMilliseconds, actionOnCompletion));
         }
         #endregion
     }
