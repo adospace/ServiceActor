@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Scripting.Hosting;
+using System.Threading.Tasks.Dataflow;
 
 namespace ServiceActor
 {
@@ -394,11 +395,17 @@ namespace ServiceActor
 
         private static ActionQueue GetActionQueueFor(object objectToWrap, Type typeToWrap, object aggregateKey)
         {
+            int capacity = DataflowBlockOptions.Unbounded;
+            if (Attribute.GetCustomAttribute(typeToWrap, typeof(QueueCapacityAttribute)) is QueueCapacityAttribute queueCapacityAttribute)
+            {
+                capacity = queueCapacityAttribute.Capacity;
+            }
+             
             if (aggregateKey != null)
             {
                 return _queuesCache.AddOrUpdate(
                     aggregateKey,
-                    new ActionQueue(aggregateKey.ToString()),
+                    new ActionQueue(aggregateKey.ToString(), capacity),
                     (key, oldValue) => oldValue);
             }
 
@@ -406,13 +413,13 @@ namespace ServiceActor
             {
                 return _queuesCache.AddOrUpdate(
                     serviceDomain.DomainKey,
-                    new ActionQueue(serviceDomain.DomainKey.ToString()),
+                    new ActionQueue(serviceDomain.DomainKey.ToString(), capacity),
                     (key, oldValue) => oldValue);
             }
 
             return _queuesCache.AddOrUpdate(
                 objectToWrap.GetHashCode().ToString(),
-                new ActionQueue(objectToWrap.GetType().FullName),
+                new ActionQueue(objectToWrap.GetType().FullName, capacity),
                 (key, oldValue) => oldValue);
         }
 

@@ -32,7 +32,7 @@ namespace ServiceActor
 
         public string Name { get; }
 
-        public ActionQueue(string name)
+        public ActionQueue(string name, int capacity)
         {
             _actionQueue = new ActionBlock<InvocationItem>(async invocation =>
             {
@@ -83,7 +83,7 @@ namespace ServiceActor
                 _executingActionThreadId = null;
 
                 executingInvocationItem.SignalExecuted();
-            });
+            }, new ExecutionDataflowBlockOptions() { BoundedCapacity = capacity });
             Name = name;
         }
 
